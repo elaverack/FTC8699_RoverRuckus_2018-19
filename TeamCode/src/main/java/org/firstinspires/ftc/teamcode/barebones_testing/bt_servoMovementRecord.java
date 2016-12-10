@@ -3,52 +3,16 @@ package org.firstinspires.ftc.teamcode.barebones_testing;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.exception.FTDeviceClosedException;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import java.io.Console;
 import java.io.File;
-
-import android.app.Application;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.IntentSender;
-import android.content.ServiceConnection;
-import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
-import android.content.res.Configuration;
-import android.content.res.Resources;
-import android.database.DatabaseErrorHandler;
-import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.UserHandle;
-import android.support.annotation.Nullable;
-import android.view.Display;
-
-import org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity;
-
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
-
+import java.util.Enumeration;
 import java.util.Vector;
 
 // Created on 12/9/2016 at 9:13 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.barebones_testing
@@ -60,42 +24,34 @@ public class bt_servoMovementRecord extends OpMode {
     //Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
 
+    //The servo and touch sensor that is used to record.
     Servo servo;
     TouchSensor sensor;
-    Context context;
-    File file;
-    File file2;
-    File file3;
 
-    //Vector save = new Vector();
-    //File save;
+    //The list of values that are being saved and the file they are being saved to.
+    Vector save = new Vector();
+    File saveFile;
 
     //Code to run ONCE when the driver hits INIT
     @Override
     public void init() {
         telemetry.addData("Status", "Initialized");
 
-        /* eg: Initialize the hardware variables. Note that the strings used here as parameters
-         * to 'get' must correspond to the names assigned during the robot configuration
-         * step (using the FTC Robot Controller app on the phone).
-         */
-        // eg: Set the drive motor directions:
-        // Reverse the motor that runs backwards when connected directly to the battery
-        // Set to REVERSE if using AndyMark motors
-        // Set to FORWARD if using AndyMark motors
-
+        //Initiation of servo and sensor. These are actually mapped in the configuration file.
         servo = hardwareMap.servo.get("servo");
         sensor = hardwareMap.touchSensor.get("sensor");
 
-        //save = new File(context.getFilesDir(), "save.txt");
+        /* Working file creation example.
 
-        context = hardwareMap.appContext;
+        !! No need to read this if you're trying to understand how the code works.
+        !! This is just for me to reference for future work.
 
-        //file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Servo Test Saves");
-        //if (!file.mkdir()) {
-        //    telemetry.addData("Error", "It didn't work, try again...");
-        //}
+        android.content.Context context = hardwareMap.appContext;
 
+        file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Servo Test Saves");
+        if (!file.mkdir()) {
+            telemetry.addData("Error", "It didn't work, try again...");
+        }
         file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Servo Test Saves", "congrats.txt");
         try {
             file.createNewFile();
@@ -103,7 +59,6 @@ public class bt_servoMovementRecord extends OpMode {
             e.printStackTrace();
             telemetry.addData("Error", "Maybe not congrats...");
         }
-
         try {
             FileOutputStream f = new FileOutputStream(file);
             PrintWriter pw = new PrintWriter(f);
@@ -118,7 +73,20 @@ public class bt_servoMovementRecord extends OpMode {
             e.printStackTrace();
             telemetry.addData("Error", "Maybe not congrats...");
         }
+        */
 
+        /* Initiation of save file. First it declares where the file will go (a folder I created in Downloads) and what the
+        * file will be named (save2.txt -- save1.txt was my first success, but I had to change how it wrote to the file. I keep it for reference.).
+        * It then creates the file ("saveFile.createNewFile();"). If there's an issue (catch IOException), it will notify the driver station phone
+        * through telemetry ("telemetry.addData("Error", "Couldn't create file for some reason.");")
+        */
+        saveFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Servo Test Saves", "save2.txt");
+        try {
+            saveFile.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+            telemetry.addData("Error", "Couldn't create file for some reason.");
+        }
     }
 
     //Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
@@ -134,7 +102,11 @@ public class bt_servoMovementRecord extends OpMode {
 
         runtime.reset();
 
+        //Get the servo ready for recording
         servo.setPosition(0);
+
+        //Just for reference in the save file, it makes the first line read "START"
+        save.addElement("START");
 
     }
 
@@ -143,17 +115,18 @@ public class bt_servoMovementRecord extends OpMode {
     public void loop() {
         telemetry.addData("Status", "Running: " + runtime.toString());
 
-        // eg: Run wheels in tank mode (note: The joystick goes negative when pushed forwards)
-
+        //If I press the touch sensor, move the servo. This is so that I don't have to bother with a controller
         if (sensor.isPressed()) {
             servo.setPosition(1);
         } else {
             servo.setPosition(0);
         }
 
+        //Just keeping track of servo position
         telemetry.addData("Servo Position", servo.getPosition());
 
-        //save.addElement(new Object[]{runtime.toString(), servo.getPosition()});
+        //Add both the current runtime and the servo position to the list of values
+        save.addElement("{" + runtime.seconds() + "}, {" + servo.getPosition() + "}");
 
     }
 
@@ -161,9 +134,33 @@ public class bt_servoMovementRecord extends OpMode {
     @Override
     public void stop() {
 
-        // eg: Set all motor powers to 0
+        //Just another reference in the save file.
+        save.addElement("STOP");
 
-        servo.setPosition(0);
+        try {
+            //Open up file to write to
+            FileOutputStream f = new FileOutputStream(saveFile);
+            PrintWriter pw = new PrintWriter(f);
+            Enumeration e = save.elements();
+
+            /* Using enumeration (I don't even know exactly what that is), write all the values to
+            * the text file line by line.
+            */
+            while (e.hasMoreElements()) {
+                pw.println(e.nextElement().toString());
+            }
+            pw.flush();
+            pw.close();
+            f.close();
+        } catch (FileNotFoundException e) {
+            //If the file doesn't exist, do something that I don't think works.
+            e.printStackTrace();
+            telemetry.addData("Error", "I wonder if this shows up");
+        } catch (IOException e) {
+            //Literally the same as before
+            e.printStackTrace();
+            telemetry.addData("Error", "I wonder if this shows up");
+        }
 
     }
 
