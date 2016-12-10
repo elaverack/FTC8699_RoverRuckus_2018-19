@@ -30,23 +30,13 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
-
-import android.os.Debug;
-import android.os.Environment;
-import android.util.Log;
-import android.app.AlertDialog;
+package org.firstinspires.ftc.teamcode.all_opmodes_120916;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-import java.io.Console;
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.Enumeration;
-import java.util.Vector;
 
 /**
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -62,9 +52,9 @@ import java.util.Vector;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Write", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
+@TeleOp(name="MecanumTestServ", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
 //@Disabled
-public class Write extends OpMode
+public class Mechanum_Test_Servos extends OpMode
 {
     /* Declare OpMode members. */
     private ElapsedTime runtime = new ElapsedTime();
@@ -73,6 +63,8 @@ public class Write extends OpMode
     private DcMotor leftMotor2;
     private DcMotor rightMotor1;
     private DcMotor rightMotor2;
+    private Servo rightServ;
+    private Servo leftServ;
 
     float rightStickY;
     float rightStickX;
@@ -81,7 +73,11 @@ public class Write extends OpMode
     float powerLF;
     float powerLB;
     float leftStickX;
-    Vector save = new Vector();
+    double servoPositionR = 0;
+    double servoPositionL = 0;
+    boolean waitforfalseR = false;
+    boolean waitforfalseL = false;
+    boolean waitforfalseD = false;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -98,6 +94,8 @@ public class Write extends OpMode
         leftMotor2  = hardwareMap.dcMotor.get("lb");
         rightMotor1 = hardwareMap.dcMotor.get("rf");
         rightMotor2 = hardwareMap.dcMotor.get("rb");
+        rightServ = hardwareMap.servo.get("right");
+        leftServ = hardwareMap.servo.get("left");
 
         // eg: Set the drive motor directions:
         // Reverse the motor that runs backwards when connected directly to the battery
@@ -106,6 +104,10 @@ public class Write extends OpMode
         rightMotor1.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
         rightMotor2.setDirection(DcMotor.Direction.FORWARD);
         // telemetry.addData("Status", "Initialized");
+
+        rightServ.setDirection(Servo.Direction.FORWARD);
+        leftServ.setDirection(Servo.Direction.REVERSE);
+
     }
 
     /*
@@ -135,9 +137,43 @@ public class Write extends OpMode
 
         // eg: Run wheels in tank mode (note: The joystick goes negative when pushed forwards)
 
-        rightStickY = -gamepad1.right_stick_y;
-        rightStickX = gamepad1.right_stick_x;
-        leftStickX = gamepad1.left_stick_x;
+        if (!waitforfalseR) {
+            if (gamepad1.b) {
+                servoPositionR -= 0.1;
+                waitforfalseR = true;
+            } else if (gamepad1.a) {
+                servoPositionR += 0.1;
+                waitforfalseR = true;
+            }
+        } else if (!gamepad1.a & !gamepad1.b) {
+            waitforfalseR = false;
+        }
+        if (!waitforfalseL) {
+            if (gamepad1.y) {
+                servoPositionL -= 0.1;
+                waitforfalseL = true;
+            } else if (gamepad1.x) {
+                servoPositionL += 0.1;
+                waitforfalseL = true;
+            }
+        } else if (!gamepad1.y & !gamepad1.x) {
+            waitforfalseL = false;
+        }
+        if (!waitforfalseD) {
+            if (gamepad1.dpad_up) {
+                rightServ.setDirection(Servo.Direction.FORWARD);
+                waitforfalseD = true;
+            } else if (gamepad1.dpad_down) {
+                rightServ.setDirection(Servo.Direction.REVERSE);
+                waitforfalseD = true;
+            }
+        } else if (!gamepad1.dpad_up & !gamepad1.dpad_down) {
+            waitforfalseD = false;
+        }
+
+        rightStickY = -gamepad1.left_stick_y;
+        rightStickX = gamepad1.left_stick_x;
+        leftStickX = -gamepad1.right_stick_x;
 
         powerRF = rightStickY;
         powerRB = rightStickY;
@@ -159,18 +195,15 @@ public class Write extends OpMode
         if (powerLF > 1) {powerLF = 1;} else if (powerLF < -1) {powerLF = -1;}
         if (powerLB > 1) {powerLB = 1;} else if (powerLB < -1) {powerLB = -1;}
 
+        rightServ.setPosition(servoPositionR);
+        leftServ.setPosition(servoPositionL);
+
         leftMotor1.setPower(powerLF);
         leftMotor2.setPower(powerLB);
         rightMotor1.setPower(powerRF);
         rightMotor2.setPower(powerRB);
-        telemetry.addData("Sticks", "X: " + gamepad1.right_stick_x);
-        telemetry.addData("Sticks", "Y: " + -gamepad1.right_stick_y);
-        telemetry.addData("Power", "Right Front: " + powerRF);
-        telemetry.addData("Power", "Right Back: " + powerRB);
-        telemetry.addData("Power", "Left Front: " + powerLF);
-        telemetry.addData("Power", "Left Back: " + powerLB);
-
-        save.addElement(new Object[]{runtime.toString(), powerRF, powerRB, powerLF, powerLB});
+        telemetry.addData("ServoR", "Position: " + servoPositionR);
+        telemetry.addData("ServoL", "Position: " + servoPositionL);
     }
 
     /*
@@ -183,24 +216,6 @@ public class Write extends OpMode
         leftMotor2.setPower(0);
         rightMotor1.setPower(0);
         rightMotor2.setPower(0);
-
-        //Put write code to text file
-        try{
-            File root = new File(Environment.getDataDirectory(), "Saves");
-            Log.d("Tag?", Environment.getDataDirectory().toString());
-            if (!root.exists()) {
-                root.mkdirs();
-            }
-            File saveFile = new File(root, "save.txt");
-            PrintWriter writer = new PrintWriter(saveFile);
-            Enumeration e = save.elements();
-            while (e.hasMoreElements()) {
-                writer.println(e.nextElement());
-            }
-            writer.close();
-        } catch (Exception e) {
-            Log.d("Tag?", "Well, there was an issue...");
-        }
 
     }
 

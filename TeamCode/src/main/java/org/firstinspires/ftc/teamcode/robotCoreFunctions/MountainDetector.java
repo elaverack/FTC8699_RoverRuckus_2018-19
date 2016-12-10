@@ -12,7 +12,7 @@ import android.hardware.Camera;
 import com.qualcomm.ftccommon.DbgLog;
 
 import org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity;
-import org.firstinspires.ftc.teamcode.CameraPreview;
+import org.firstinspires.ftc.teamcode.all_opmodes_120916.CameraPreview;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import java.io.ByteArrayOutputStream;

@@ -30,13 +30,12 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.all_opmodes_120916;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /**
@@ -53,16 +52,25 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Template", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
+@TeleOp(name="MecanumTest2", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
 @Disabled
-public class TemplateOpMode extends OpMode
+public class Mechanum_Test_Mach2 extends OpMode
 {
     /* Declare OpMode members. */
     private ElapsedTime runtime = new ElapsedTime();
 
+    private DcMotor leftMotor1;
+    private DcMotor leftMotor2;
+    private DcMotor rightMotor1;
+    private DcMotor rightMotor2;
 
-
-
+    float rightStickY;
+    float rightStickX;
+    float powerRF;
+    float powerRB;
+    float powerLF;
+    float powerLB;
+    float leftStickX;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -75,14 +83,17 @@ public class TemplateOpMode extends OpMode
          * to 'get' must correspond to the names assigned during the robot configuration
          * step (using the FTC Robot Controller app on the phone).
          */
-
+        leftMotor1  = hardwareMap.dcMotor.get("lf");
+        leftMotor2  = hardwareMap.dcMotor.get("lb");
+        rightMotor1 = hardwareMap.dcMotor.get("rf");
+        rightMotor2 = hardwareMap.dcMotor.get("rb");
 
         // eg: Set the drive motor directions:
         // Reverse the motor that runs backwards when connected directly to the battery
-         // Set to REVERSE if using AndyMark motors
-
-        // Set to FORWARD if using AndyMark motors
-
+        leftMotor1.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
+        leftMotor2.setDirection(DcMotor.Direction.REVERSE);
+        rightMotor1.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
+        rightMotor2.setDirection(DcMotor.Direction.FORWARD);
         // telemetry.addData("Status", "Initialized");
     }
 
@@ -113,10 +124,40 @@ public class TemplateOpMode extends OpMode
 
         // eg: Run wheels in tank mode (note: The joystick goes negative when pushed forwards)
 
+        rightStickY = -gamepad1.right_stick_y;
+        rightStickX = gamepad1.right_stick_x;
+        leftStickX = gamepad1.left_stick_x;
 
+        powerRF = rightStickY;
+        powerRB = rightStickY;
+        powerLF = rightStickY;
+        powerLB = rightStickY;
 
+        powerRF -= rightStickX;
+        powerRB += rightStickX;
+        powerLF += rightStickX;
+        powerLB -= rightStickX;
 
-        
+        powerRF -= leftStickX;
+        powerRB -= leftStickX;
+        powerLF += leftStickX;
+        powerLB += leftStickX;
+
+        if (powerRF > 1) {powerRF = 1;} else if (powerRF < -1) {powerRF = -1;}
+        if (powerRB > 1) {powerRB = 1;} else if (powerRB < -1) {powerRB = -1;}
+        if (powerLF > 1) {powerLF = 1;} else if (powerLF < -1) {powerLF = -1;}
+        if (powerLB > 1) {powerLB = 1;} else if (powerLB < -1) {powerLB = -1;}
+
+        leftMotor1.setPower(powerLF);
+        leftMotor2.setPower(powerLB);
+        rightMotor1.setPower(powerRF);
+        rightMotor2.setPower(powerRB);
+        telemetry.addData("Sticks", "X: " + gamepad1.right_stick_x);
+        telemetry.addData("Sticks", "Y: " + -gamepad1.right_stick_y);
+        telemetry.addData("Power", "Right Front: " + powerRF);
+        telemetry.addData("Power", "Right Back: " + powerRB);
+        telemetry.addData("Power", "Left Front: " + powerLF);
+        telemetry.addData("Power", "Left Back: " + powerLB);
     }
 
     /*
@@ -125,7 +166,10 @@ public class TemplateOpMode extends OpMode
     @Override
     public void stop() {
 
-
+        leftMotor1.setPower(0);
+        leftMotor2.setPower(0);
+        rightMotor1.setPower(0);
+        rightMotor2.setPower(0);
 
     }
 

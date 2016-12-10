@@ -30,12 +30,27 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.all_opmodes_120916;
 
+import android.content.Context;
+import android.os.Debug;
+import android.os.Environment;
+import android.util.Log;
+import android.app.AlertDialog;
+
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import java.io.Console;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -51,9 +66,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="MecanumTest2", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
-//@Disabled
-public class Mechanum_Test_Mach2 extends OpMode
+@TeleOp(name="Write", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
+@Disabled
+public class Write extends OpMode
 {
     /* Declare OpMode members. */
     private ElapsedTime runtime = new ElapsedTime();
@@ -70,6 +85,7 @@ public class Mechanum_Test_Mach2 extends OpMode
     float powerLF;
     float powerLB;
     float leftStickX;
+    Vector save = new Vector();
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -151,12 +167,16 @@ public class Mechanum_Test_Mach2 extends OpMode
         leftMotor2.setPower(powerLB);
         rightMotor1.setPower(powerRF);
         rightMotor2.setPower(powerRB);
+
+        telemetry.addData("Directory", "");
         telemetry.addData("Sticks", "X: " + gamepad1.right_stick_x);
         telemetry.addData("Sticks", "Y: " + -gamepad1.right_stick_y);
         telemetry.addData("Power", "Right Front: " + powerRF);
         telemetry.addData("Power", "Right Back: " + powerRB);
         telemetry.addData("Power", "Left Front: " + powerLF);
         telemetry.addData("Power", "Left Back: " + powerLB);
+
+        save.addElement(new Object[]{runtime.toString(), powerRF, powerRB, powerLF, powerLB});
     }
 
     /*
@@ -169,6 +189,37 @@ public class Mechanum_Test_Mach2 extends OpMode
         leftMotor2.setPower(0);
         rightMotor1.setPower(0);
         rightMotor2.setPower(0);
+
+        //Put write code to text file
+        try{
+            File root = new File(Environment.getDataDirectory(), "Saves");
+            Log.d("Tag?", Environment.getDataDirectory().toString());
+            if (!root.exists()) {
+                root.mkdirs();
+            }
+            File saveFile = new File(root, "save.txt");
+            PrintWriter writer = new PrintWriter(saveFile);
+            Enumeration e = save.elements();
+            while (e.hasMoreElements()) {
+                writer.println(e.nextElement());
+            }
+            writer.close();
+        } catch (Exception e) {
+            Log.d("Tag?", "Well, there was an issue...");
+        }
+
+        String filename = "myfile";
+        String string = "Hello world!";
+        FileOutputStream outputStream;
+        /*
+        try {
+            outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
+            outputStream.write(string.getBytes());
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        */
 
     }
 

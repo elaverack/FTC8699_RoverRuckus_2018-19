@@ -30,14 +30,12 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.all_opmodes_120916;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.PWMOutput;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -55,18 +53,14 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Test", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
-//@Disabled
-public class TemplateOpMode_Iterative extends OpMode
+@TeleOp(name="Template", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
+@Disabled
+public class TemplateOpMode extends OpMode
 {
     /* Declare OpMode members. */
     private ElapsedTime runtime = new ElapsedTime();
 
-    private DcMotor leftMotor1;
-    private DcMotor leftMotor2;
-    private DcMotor rightMotor1;
-    private DcMotor rightMotor2;
-    private Servo phoneDirection;
+
 
 
 
@@ -81,18 +75,14 @@ public class TemplateOpMode_Iterative extends OpMode
          * to 'get' must correspond to the names assigned during the robot configuration
          * step (using the FTC Robot Controller app on the phone).
          */
-        leftMotor1  = hardwareMap.dcMotor.get("lf");
-        leftMotor2  = hardwareMap.dcMotor.get("lb");
-        rightMotor1 = hardwareMap.dcMotor.get("rf");
-        rightMotor2 = hardwareMap.dcMotor.get("rb");
-        phoneDirection = hardwareMap.servo.get("phone");
+
 
         // eg: Set the drive motor directions:
         // Reverse the motor that runs backwards when connected directly to the battery
-        leftMotor1.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-        leftMotor2.setDirection(DcMotor.Direction.REVERSE);
-        rightMotor1.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
-        rightMotor2.setDirection(DcMotor.Direction.FORWARD);
+         // Set to REVERSE if using AndyMark motors
+
+        // Set to FORWARD if using AndyMark motors
+
         // telemetry.addData("Status", "Initialized");
     }
 
@@ -122,20 +112,11 @@ public class TemplateOpMode_Iterative extends OpMode
         telemetry.addData("Status", "Running: " + runtime.toString());
 
         // eg: Run wheels in tank mode (note: The joystick goes negative when pushed forwards)
-        leftMotor1.setPower(-gamepad1.left_stick_y);
-        leftMotor2.setPower(-gamepad1.left_stick_y);
-        rightMotor1.setPower(-gamepad1.right_stick_y);
-        rightMotor2.setPower(-gamepad1.right_stick_y);
-
-        if (gamepad1.dpad_up) {
-            phoneDirection.setPosition(90);
-        } else if (gamepad1.dpad_left) {
-            phoneDirection.setPosition(180);
-        } else if (gamepad1.dpad_right) {
-            phoneDirection.setPosition(0);
-        }
 
 
+
+
+        
     }
 
     /*
@@ -144,11 +125,7 @@ public class TemplateOpMode_Iterative extends OpMode
     @Override
     public void stop() {
 
-        leftMotor1.setPower(0);
-        leftMotor2.setPower(0);
-        rightMotor1.setPower(0);
-        rightMotor2.setPower(0);
-        phoneDirection.setPosition(0);
+
 
     }
 

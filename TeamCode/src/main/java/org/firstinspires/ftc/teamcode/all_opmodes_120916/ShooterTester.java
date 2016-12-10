@@ -30,13 +30,13 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.all_opmodes_120916;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.robocol.PeerApp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /**
@@ -53,17 +53,15 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Mecanum Test", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
-//@Disabled
-public class Mechanum_Test extends OpMode
+@TeleOp(name="ShooterTest", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
+@Disabled
+public class ShooterTester extends OpMode
 {
     /* Declare OpMode members. */
     private ElapsedTime runtime = new ElapsedTime();
 
-    private DcMotor leftMotor1;
-    private DcMotor leftMotor2;
-    private DcMotor rightMotor1;
-    private DcMotor rightMotor2;
+    private DcMotor shooter;
+    private double motorPower = 0;
 
 
 
@@ -78,17 +76,10 @@ public class Mechanum_Test extends OpMode
          * to 'get' must correspond to the names assigned during the robot configuration
          * step (using the FTC Robot Controller app on the phone).
          */
-        leftMotor1  = hardwareMap.dcMotor.get("lf");
-        leftMotor2  = hardwareMap.dcMotor.get("lb");
-        rightMotor1 = hardwareMap.dcMotor.get("rf");
-        rightMotor2 = hardwareMap.dcMotor.get("rb");
+        shooter  = hardwareMap.dcMotor.get("shooter");
 
         // eg: Set the drive motor directions:
         // Reverse the motor that runs backwards when connected directly to the battery
-        leftMotor1.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-        leftMotor2.setDirection(DcMotor.Direction.REVERSE);
-        rightMotor1.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
-        rightMotor2.setDirection(DcMotor.Direction.FORWARD);
         // telemetry.addData("Status", "Initialized");
     }
 
@@ -118,31 +109,33 @@ public class Mechanum_Test extends OpMode
         telemetry.addData("Status", "Running: " + runtime.toString());
 
         // eg: Run wheels in tank mode (note: The joystick goes negative when pushed forwards)
-        if (gamepad1.dpad_up) {
-            leftMotor1.setPower(1);
-            leftMotor2.setPower(1);
-            rightMotor1.setPower(1);
-            rightMotor2.setPower(1);
-        } else if (gamepad1.dpad_down) {
-            leftMotor1.setPower(-1);
-            leftMotor2.setPower(-1);
-            rightMotor1.setPower(-1);
-            rightMotor2.setPower(-1);
-        } else if (gamepad1.dpad_left) {
-            leftMotor1.setPower(-1);
-            leftMotor2.setPower(1);
-            rightMotor1.setPower(1);
-            rightMotor2.setPower(-1);
-        } else if (gamepad1.dpad_right) {
-            leftMotor1.setPower(1);
-            leftMotor2.setPower(-1);
-            rightMotor1.setPower(-1);
-            rightMotor2.setPower(1);
+        //shooter.setPower(-gamepad1.left_stick_y);
+
+        if (gamepad1.b) {
+            motorPower = 0;
+            shooter.setPower(0);
+        } else if (gamepad1.a) {
+            motorPower = 0.8;
+            shooter.setPower(0.8);
+        } else if (gamepad1.x) {
+            if (motorPower > -0.8) {
+                motorPower -= 0.1;
+            }
+
+            shooter.setPower(motorPower);
+
+        } else if (gamepad1.y) {
+
+            if (motorPower < 0.8) {
+                motorPower += 0.1;
+            }
+
+            shooter.setPower(motorPower);
+
         } else {
-            leftMotor1.setPower(0);
-            leftMotor2.setPower(0);
-            rightMotor1.setPower(0);
-            rightMotor2.setPower(0);
+
+            shooter.setPower(motorPower);
+
         }
 
     }
@@ -153,10 +146,7 @@ public class Mechanum_Test extends OpMode
     @Override
     public void stop() {
 
-        leftMotor1.setPower(0);
-        leftMotor2.setPower(0);
-        rightMotor1.setPower(0);
-        rightMotor2.setPower(0);
+        shooter.setPower(0);
 
     }
 
