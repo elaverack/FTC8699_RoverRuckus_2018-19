@@ -36,6 +36,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /**
@@ -53,7 +54,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  */
 
 @TeleOp(name="MecanumTest2", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
-@Disabled
+//@Disabled
 public class Mechanum_Test_Mach2 extends OpMode
 {
     /* Declare OpMode members. */
@@ -90,10 +91,10 @@ public class Mechanum_Test_Mach2 extends OpMode
 
         // eg: Set the drive motor directions:
         // Reverse the motor that runs backwards when connected directly to the battery
-        leftMotor1.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-        leftMotor2.setDirection(DcMotor.Direction.REVERSE);
-        rightMotor1.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
-        rightMotor2.setDirection(DcMotor.Direction.FORWARD);
+        leftMotor1.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
+        leftMotor2.setDirection(DcMotor.Direction.FORWARD);
+        rightMotor1.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
+        rightMotor2.setDirection(DcMotor.Direction.REVERSE);
         // telemetry.addData("Status", "Initialized");
     }
 
@@ -124,20 +125,17 @@ public class Mechanum_Test_Mach2 extends OpMode
 
         // eg: Run wheels in tank mode (note: The joystick goes negative when pushed forwards)
 
-        rightStickY = -gamepad1.right_stick_y;
-        rightStickX = gamepad1.right_stick_x;
-        leftStickX = gamepad1.left_stick_x;
-
+        rightStickY = gamepad1.right_stick_y;
+        rightStickX = -gamepad1.right_stick_x;
+        leftStickX = -gamepad1.left_stick_x;
         powerRF = rightStickY;
         powerRB = rightStickY;
         powerLF = rightStickY;
         powerLB = rightStickY;
-
         powerRF -= rightStickX;
         powerRB += rightStickX;
         powerLF += rightStickX;
         powerLB -= rightStickX;
-
         powerRF -= leftStickX;
         powerRB -= leftStickX;
         powerLF += leftStickX;

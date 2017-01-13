@@ -5,8 +5,11 @@ import android.os.Environment;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.HardwareDevice;
+import com.qualcomm.robotcore.hardware.I2cAddr;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.io.BufferedReader;
@@ -35,6 +38,7 @@ public class bt_servoMovementPlay extends OpMode {
     File loadFile;
     double[][] values;
     int counter = 0;
+
 
     //Code to run ONCE when the driver hits INIT
     @Override
