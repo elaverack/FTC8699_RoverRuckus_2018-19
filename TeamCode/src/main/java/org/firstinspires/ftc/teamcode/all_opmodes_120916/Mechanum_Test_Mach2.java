@@ -32,102 +32,68 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.firstinspires.ftc.teamcode.all_opmodes_120916;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-/**
- * This file contains an example of an iterative (Non-Linear) "OpMode".
- * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
- * The names of OpModes appear on the menu of the FTC Driver Station.
- * When an selection is made from the menu, the corresponding OpMode
- * class is instantiated on the Robot Controller and executed.
- *
- * This particular OpMode just executes a basic Tank Drive Teleop for a PushBot
- * It includes all the skeletal structure that all iterative OpModes contain.
- *
- * Use Android Studios to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
- */
-
-@TeleOp(name="MecanumTest2", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
-//@Disabled
+@TeleOp(name="Competition", group="Iterative Opmode")
 public class Mechanum_Test_Mach2 extends OpMode
 {
-    /* Declare OpMode members. */
     private ElapsedTime runtime = new ElapsedTime();
 
+    // Motors of the robot \/
     private DcMotor leftMotor1;
     private DcMotor leftMotor2;
     private DcMotor rightMotor1;
     private DcMotor rightMotor2;
 
-    float rightStickY;
-    float rightStickX;
-    float powerRF;
-    float powerRB;
-    float powerLF;
-    float powerLB;
-    float leftStickX;
+    // Joystick and motor power values to mess with during loop()
+    private float rightStickY;
+    private float rightStickX;
+    private float powerRF;
+    private float powerRB;
+    private float powerLF;
+    private float powerLB;
+    private float leftStickX;
 
-    /*
-     * Code to run ONCE when the driver hits INIT
-     */
     @Override
     public void init() {
         telemetry.addData("Status", "Initialized");
 
-        /* eg: Initialize the hardware variables. Note that the strings used here as parameters
-         * to 'get' must correspond to the names assigned during the robot configuration
-         * step (using the FTC Robot Controller app on the phone).
-         */
+        // Initiation of motors named in configuration file.
+        // Basically gives the code the motor to look for and assigns it to a variable.
         leftMotor1  = hardwareMap.dcMotor.get("lf");
         leftMotor2  = hardwareMap.dcMotor.get("lb");
         rightMotor1 = hardwareMap.dcMotor.get("rf");
         rightMotor2 = hardwareMap.dcMotor.get("rb");
 
-        // eg: Set the drive motor directions:
-        // Reverse the motor that runs backwards when connected directly to the battery
-        leftMotor1.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
+        // A trial and error experience really.
+        // This just sets the motor directions so that they all run correctly according to the code.
+        leftMotor1.setDirection(DcMotor.Direction.FORWARD);
         leftMotor2.setDirection(DcMotor.Direction.FORWARD);
-        rightMotor1.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
+        rightMotor1.setDirection(DcMotor.Direction.REVERSE);
         rightMotor2.setDirection(DcMotor.Direction.REVERSE);
-        // telemetry.addData("Status", "Initialized");
     }
 
-    /*
-     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
-     */
     @Override
-    public void init_loop() {
-    }
+    public void init_loop() {}
 
-    /*
-     * Code to run ONCE when the driver hits PLAY
-     */
     @Override
     public void start() {
-
         runtime.reset();
-
-
     }
 
-    /*
-     * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
-     */
     @Override
     public void loop() {
         telemetry.addData("Status", "Running: " + runtime.toString());
 
-        // eg: Run wheels in tank mode (note: The joystick goes negative when pushed forwards)
-
-        rightStickY = gamepad1.right_stick_y;
-        rightStickX = -gamepad1.right_stick_x;
-        leftStickX = -gamepad1.left_stick_x;
+        // This is the calculation for the motor power values.
+        // It first sets controller data to variables, and then respectively applies those
+        //  variables to each motor power.
+        rightStickY = -gamepad1.right_stick_y;
+        rightStickX = gamepad1.right_stick_x;
+        leftStickX = gamepad1.left_stick_x;
         powerRF = rightStickY;
         powerRB = rightStickY;
         powerLF = rightStickY;
@@ -141,11 +107,16 @@ public class Mechanum_Test_Mach2 extends OpMode
         powerLF += leftStickX;
         powerLB += leftStickX;
 
+        // Could be simplified honestly.
+        // Basically cuts the motor powers if they are above one after calculations
+        //  -- since motor powers can't be greater than one or less than negative one.
         if (powerRF > 1) {powerRF = 1;} else if (powerRF < -1) {powerRF = -1;}
         if (powerRB > 1) {powerRB = 1;} else if (powerRB < -1) {powerRB = -1;}
         if (powerLF > 1) {powerLF = 1;} else if (powerLF < -1) {powerLF = -1;}
         if (powerLB > 1) {powerLB = 1;} else if (powerLB < -1) {powerLB = -1;}
 
+        // This sets the motors to the calculated powers and then outputs data to the
+        //  driver station phone, mainly for troubleshooting purposes.
         leftMotor1.setPower(powerLF);
         leftMotor2.setPower(powerLB);
         rightMotor1.setPower(powerRF);
@@ -158,12 +129,10 @@ public class Mechanum_Test_Mach2 extends OpMode
         telemetry.addData("Power", "Left Back: " + powerLB);
     }
 
-    /*
-     * Code to run ONCE after the driver hits STOP
-     */
     @Override
     public void stop() {
 
+        // To assure we don't get in trouble once the game ends, set the all the motors to zero.
         leftMotor1.setPower(0);
         leftMotor2.setPower(0);
         rightMotor1.setPower(0);

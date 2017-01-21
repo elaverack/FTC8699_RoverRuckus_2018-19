@@ -19,7 +19,7 @@ import java.util.Vector;
 
 @TeleOp(name = "bt_servoMovementRecord", group = "Iterative Opmode")
 // @Autonomous(...) is the other common choice
-//@Disabled
+@Disabled
 public class bt_servoMovementRecord extends OpMode {
     //Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();

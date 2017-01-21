@@ -25,7 +25,7 @@ import java.util.Vector;
 
 @Autonomous(name = "bt_servoMovementPlay", group = "Iterative Opmode")
 // @Autonomous(...) is the other common choice
-//@Disabled
+@Disabled
 public class bt_servoMovementPlay extends OpMode {
     //Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
