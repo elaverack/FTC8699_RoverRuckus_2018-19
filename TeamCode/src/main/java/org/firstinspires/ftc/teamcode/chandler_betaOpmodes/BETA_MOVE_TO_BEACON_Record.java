@@ -18,9 +18,9 @@ import java.util.Vector;
 
 // Created on 1/18/2017 at 4:42 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.chandler_betaOpmodes
 
-@TeleOp(name = "MECH-Record-2", group = "BETA")
+@TeleOp(name = "Rec_1: TO BEACON", group = "BETA")
 //@Disabled
-public class BETA_mechanumMovementRecord2 extends OpMode {
+public class BETA_MOVE_TO_BEACON_Record extends OpMode {
     //Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -56,7 +56,7 @@ public class BETA_mechanumMovementRecord2 extends OpMode {
         rightMotor1.setDirection(DcMotor.Direction.REVERSE);
         rightMotor2.setDirection(DcMotor.Direction.REVERSE);
 
-        saveFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Servo Test Saves", "SAVE2.txt");
+        saveFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Servo Test Saves", "MOVE_TO_BEACON.txt");
         try {
             saveFile.createNewFile();
         } catch (IOException e) {

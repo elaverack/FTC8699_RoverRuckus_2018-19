@@ -30,17 +30,21 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode.all_opmodes_120916;
+package org.firstinspires.ftc.teamcode.chandler_betaOpmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name="Competition", group="Iterative Opmode")
+import org.firstinspires.ftc.robotcontroller.external.samples.SensorAdafruitRGB;
+
+@TeleOp(name="Color Tele Test", group="BETA")
 @Disabled
-public class Mechanum_Test_Mach2 extends OpMode
+public class BETA_ColorTesting extends OpMode
 {
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -50,6 +54,8 @@ public class Mechanum_Test_Mach2 extends OpMode
     private DcMotor rightMotor1;
     private DcMotor rightMotor2;
 
+    private Servo beacon_presser;
+
     // Joystick and motor power values to mess with during loop()
     private float rightStickY;
     private float rightStickX;
@@ -58,6 +64,12 @@ public class Mechanum_Test_Mach2 extends OpMode
     private float powerLF;
     private float powerLB;
     private float leftStickX;
+
+    private ColorSensor sensorRGB;
+
+    private boolean seeBeacon = false;
+    private boolean beaconRed = false;
+    private boolean beaconBlue = false;
 
     @Override
     public void init() {
@@ -69,6 +81,8 @@ public class Mechanum_Test_Mach2 extends OpMode
         leftMotor2  = hardwareMap.dcMotor.get("lb");
         rightMotor1 = hardwareMap.dcMotor.get("rf");
         rightMotor2 = hardwareMap.dcMotor.get("rb");
+        beacon_presser = hardwareMap.servo.get("beacon");
+        sensorRGB = hardwareMap.colorSensor.get("sensor_color");
 
         // A trial and error experience really.
         // This just sets the motor directions so that they all run correctly according to the code.
@@ -109,6 +123,24 @@ public class Mechanum_Test_Mach2 extends OpMode
         powerLF += leftStickX;
         powerLB += leftStickX;
 
+        switch (checkColor(sensorRGB.blue(), sensorRGB.red())) {
+            case 1:
+                seeBeacon = true;
+                beaconRed = true;
+                beaconBlue = false;
+                break;
+            case -1:
+                seeBeacon = true;
+                beaconBlue = true;
+                beaconRed = false;
+                break;
+            case 0:
+                seeBeacon = false;
+                beaconBlue = false;
+                beaconRed = false;
+                break;
+        }
+
         // Could be simplified honestly.
         // Basically cuts the motor powers if they are above one after calculations
         //  -- since motor powers can't be greater than one or less than negative one.
@@ -117,18 +149,27 @@ public class Mechanum_Test_Mach2 extends OpMode
         if (powerLF > 1) {powerLF = 1;} else if (powerLF < -1) {powerLF = -1;}
         if (powerLB > 1) {powerLB = 1;} else if (powerLB < -1) {powerLB = -1;}
 
+        if (gamepad1.right_trigger > 0.25) {
+            powerRF /= 2;
+            powerRB /= 2;
+            powerLF /= 2;
+            powerLB /= 2;
+        }
+
         // This sets the motors to the calculated powers and then outputs data to the
         //  driver station phone, mainly for troubleshooting purposes.
         leftMotor1.setPower(powerLF);
         leftMotor2.setPower(powerLB);
         rightMotor1.setPower(powerRF);
         rightMotor2.setPower(powerRB);
-        telemetry.addData("Sticks", "X: " + gamepad1.right_stick_x);
-        telemetry.addData("Sticks", "Y: " + -gamepad1.right_stick_y);
-        telemetry.addData("Power", "Right Front: " + powerRF);
-        telemetry.addData("Power", "Right Back: " + powerRB);
-        telemetry.addData("Power", "Left Front: " + powerLF);
-        telemetry.addData("Power", "Left Back: " + powerLB);
+        beacon_presser.setPosition(gamepad1.left_trigger);
+        telemetry.addData("Clear", sensorRGB.alpha());
+        telemetry.addData("Red  ", sensorRGB.red());
+        telemetry.addData("Green", sensorRGB.green());
+        telemetry.addData("Blue ", sensorRGB.blue());
+        telemetry.addData("Beacon? ", seeBeacon);
+        telemetry.addData("Blue? ", beaconBlue);
+        telemetry.addData("Red? ", beaconRed);
     }
 
     @Override
@@ -140,6 +181,16 @@ public class Mechanum_Test_Mach2 extends OpMode
         rightMotor1.setPower(0);
         rightMotor2.setPower(0);
 
+    }
+
+    private int checkColor(float blue, float red) {
+        if (red - blue > 299) {
+            return 1;
+        } else if (blue - red > 299) {
+            return -1;
+        } else {
+            return 0;
+        }
     }
 
 }

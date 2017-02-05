@@ -13,6 +13,7 @@ import java.util.Arrays;
 public class ImageAnalyst {
     private Bitmap bmp;
 
+
     // todo - return value of Integer.MAX_VALUE if no color found at all.
 
 
@@ -22,6 +23,7 @@ public class ImageAnalyst {
         } else {
             this.bmp = bmp;
         }
+
 
     }
 

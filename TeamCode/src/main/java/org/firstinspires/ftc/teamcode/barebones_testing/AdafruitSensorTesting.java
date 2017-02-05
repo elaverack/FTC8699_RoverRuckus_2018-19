@@ -74,8 +74,7 @@ import com.qualcomm.robotcore.hardware.DigitalChannelController;
 @Disabled                            // Comment this out to add to the opmode list
 public class AdafruitSensorTesting extends LinearOpMode {
 
-  ColorSensor sensorRGB1;
-  ColorSensor sensorRGB2;
+  ColorSensor sensorRGB;
   DeviceInterfaceModule cdim;
 
   // we assume that the LED pin of the RGB sensor is connected to
@@ -105,8 +104,7 @@ public class AdafruitSensorTesting extends LinearOpMode {
     // It's an I2C sensor and it's also an LED that can be turned on or off.
 
     // get a reference to our ColorSensor object.
-    sensorRGB1 = hardwareMap.colorSensor.get("sensor_color1");
-    sensorRGB2 = hardwareMap.colorSensor.get("sensor_color2");
+    sensorRGB = hardwareMap.colorSensor.get("sensor_color");
 
     // turn the LED on in the beginning, just so user will know that the sensor is active.
 
@@ -118,15 +116,15 @@ public class AdafruitSensorTesting extends LinearOpMode {
     while (opModeIsActive())  {
 
       // convert the RGB values to HSV values.
-      Color.RGBToHSV((sensorRGB1.red() * 255) / 800, (sensorRGB1.green() * 255) / 800, (sensorRGB1.blue() * 255) / 800, hsvValues);
+      Color.RGBToHSV((sensorRGB.red() * 255) / 800, (sensorRGB.green() * 255) / 800, (sensorRGB.blue() * 255) / 800, hsvValues);
 
       // send the info back to driver station using telemetry function.
 
-      telemetry.addData("Clear", sensorRGB1.alpha() + ", " + sensorRGB2.alpha());
-      telemetry.addData("Red  ", sensorRGB1.red() + ", " + sensorRGB2.red());
-      telemetry.addData("Green", sensorRGB1.green() + ", " + sensorRGB2.green());
-      telemetry.addData("Blue ", sensorRGB1.blue() + ", " + sensorRGB2.blue());
-      telemetry.addData("Address", sensorRGB1.getI2cAddress() + ", " + sensorRGB2.getI2cAddress());
+      telemetry.addData("Clear", sensorRGB.alpha());
+      telemetry.addData("Red  ", sensorRGB.red());
+      telemetry.addData("Green", sensorRGB.green());
+      telemetry.addData("Blue ", sensorRGB.blue());
+      telemetry.addData("Address", sensorRGB.getI2cAddress());
 
       // change the background color to match the color detected by the RGB sensor.
       // pass a reference to the hue, saturation, and value array as an argument

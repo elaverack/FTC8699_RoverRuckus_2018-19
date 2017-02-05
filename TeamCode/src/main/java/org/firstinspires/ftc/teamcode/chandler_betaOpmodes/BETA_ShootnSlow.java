@@ -30,17 +30,16 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode.all_opmodes_120916;
+package org.firstinspires.ftc.teamcode.chandler_betaOpmodes;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name="Competition", group="Iterative Opmode")
-@Disabled
-public class Mechanum_Test_Mach2 extends OpMode
+@TeleOp(name="COMP: TELE", group="COMP")
+public class BETA_ShootnSlow extends OpMode
 {
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -49,6 +48,9 @@ public class Mechanum_Test_Mach2 extends OpMode
     private DcMotor leftMotor2;
     private DcMotor rightMotor1;
     private DcMotor rightMotor2;
+
+    private Servo beacon_presser;
+    private Servo shooter;
 
     // Joystick and motor power values to mess with during loop()
     private float rightStickY;
@@ -69,6 +71,8 @@ public class Mechanum_Test_Mach2 extends OpMode
         leftMotor2  = hardwareMap.dcMotor.get("lb");
         rightMotor1 = hardwareMap.dcMotor.get("rf");
         rightMotor2 = hardwareMap.dcMotor.get("rb");
+        beacon_presser = hardwareMap.servo.get("beacon");
+        shooter = hardwareMap.servo.get("shoot");
 
         // A trial and error experience really.
         // This just sets the motor directions so that they all run correctly according to the code.
@@ -84,6 +88,7 @@ public class Mechanum_Test_Mach2 extends OpMode
     @Override
     public void start() {
         runtime.reset();
+        shooter.setPosition(.84);
     }
 
     @Override
@@ -117,18 +122,31 @@ public class Mechanum_Test_Mach2 extends OpMode
         if (powerLF > 1) {powerLF = 1;} else if (powerLF < -1) {powerLF = -1;}
         if (powerLB > 1) {powerLB = 1;} else if (powerLB < -1) {powerLB = -1;}
 
+        if (gamepad1.left_trigger > 0.25) {
+            powerRF /= 4 * gamepad1.left_trigger;
+            powerRB /= 4 * gamepad1.left_trigger;
+            powerLF /= 4 * gamepad1.left_trigger;
+            powerLB /= 4 * gamepad1.left_trigger;
+        }
+
+        if (gamepad1.y) {
+            shooter.setPosition(.39);
+        }
+
         // This sets the motors to the calculated powers and then outputs data to the
         //  driver station phone, mainly for troubleshooting purposes.
         leftMotor1.setPower(powerLF);
         leftMotor2.setPower(powerLB);
         rightMotor1.setPower(powerRF);
         rightMotor2.setPower(powerRB);
+        beacon_presser.setPosition(gamepad1.right_trigger);
         telemetry.addData("Sticks", "X: " + gamepad1.right_stick_x);
         telemetry.addData("Sticks", "Y: " + -gamepad1.right_stick_y);
         telemetry.addData("Power", "Right Front: " + powerRF);
         telemetry.addData("Power", "Right Back: " + powerRB);
         telemetry.addData("Power", "Left Front: " + powerLF);
         telemetry.addData("Power", "Left Back: " + powerLB);
+        telemetry.addData("Position", beacon_presser.getPosition());
     }
 
     @Override
