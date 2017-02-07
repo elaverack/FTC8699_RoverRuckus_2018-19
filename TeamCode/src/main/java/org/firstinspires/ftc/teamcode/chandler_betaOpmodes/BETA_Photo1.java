@@ -51,7 +51,7 @@ import org.firstinspires.ftc.teamcode.robotCoreFunctions.ImageAnalyst;
 
 @TeleOp(name = "PhotoTest1", group = "Linear Opmode")
 // @Autonomous(...) is the other common choice
-@Disabled
+//@Disabled
 public class BETA_Photo1 extends LinearOpMode {
 
     /* Declare OpMode members. */
@@ -96,6 +96,7 @@ public class BETA_Photo1 extends LinearOpMode {
             } catch (Exception e) {
 
             }
+            photo1 = Bitmap.createScaledBitmap(photo1, (int) photo1.getWidth()/4, (int) photo1.getHeight()/4, true);
             telemetry.addData("Status", "Decode done. Processing...");
             telemetry.update();
             ImageAnalyst imageAnalyst = new ImageAnalyst(photo1);
