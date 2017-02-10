@@ -79,6 +79,12 @@ public class ImageAnalyst {
             DbgLog.msg("blobMiddle = " + blobMiddle);
             DbgLog.msg("bmp middle =  " + bmp.getWidth() / 2);
 
+            if ((dirAmt == 0 || dirAmt == 1 || dirAmt == -1) && blobMiddle - bmp.getWidth() < 2 && (endIndex - startIndex) < 200) {
+                return 1;
+            } else {
+                DbgLog.msg("" + ((dirAmt == 0 || dirAmt == 1 || dirAmt == -1)) + ", " + (blobMiddle - bmp.getWidth() < 2) + ", " + (!((endIndex - startIndex)/2 - bmp.getWidth() < 3 && (endIndex - startIndex)/2 - bmp.getWidth() > -3)));
+            }
+
             return scaleForImageWidth(dirAmt, bmp.getWidth());
         }
 
@@ -200,5 +206,72 @@ public class ImageAnalyst {
             return false;
         }
     }
-}
+
+    public int getDominantColor() {
+        if (null == bmp) return Color.TRANSPARENT;
+
+        int redBucket = 0;
+        int greenBucket = 0;
+        int blueBucket = 0;
+        int alphaBucket = 0;
+
+        boolean hasAlpha = bmp.hasAlpha();
+        int pixelCount = bmp.getWidth() * bmp.getHeight();
+        int[] pixels = new int[pixelCount];
+        bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
+
+        for (int y = 0, h = bmp.getHeight(); y < h; y++) {
+            for (int x = 0, w = bmp.getWidth(); x < w; x++) {
+                int color = pixels[x + y * w]; // x + y * width
+                redBucket += (color >> 16) & 0xFF; // Color.red
+                greenBucket += (color >> 8) & 0xFF; // Color.greed
+                blueBucket += (color & 0xFF); // Color.blue
+                if (hasAlpha) alphaBucket += (color >>> 24); // Color.alpha
+
+            }
+
+
+        }
+
+        return Color.argb(
+                (hasAlpha) ? (alphaBucket / pixelCount) : 255,
+                redBucket / pixelCount,
+                greenBucket / pixelCount,
+                blueBucket / pixelCount);
+    }
+
+    public static int getDominantColor(Bitmap bmp) {
+        if (null == bmp) return Color.TRANSPARENT;
+
+        int redBucket = 0;
+        int greenBucket = 0;
+        int blueBucket = 0;
+        int alphaBucket = 0;
+
+        boolean hasAlpha = bmp.hasAlpha();
+        int pixelCount = bmp.getWidth() * bmp.getHeight();
+        int[] pixels = new int[pixelCount];
+        bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
+
+        for (int y = 0, h = bmp.getHeight(); y < h; y++) {
+            for (int x = 0, w = bmp.getWidth(); x < w; x++) {
+                int color = pixels[x + y * w]; // x + y * width
+                redBucket += (color >> 16) & 0xFF; // Color.red
+                greenBucket += (color >> 8) & 0xFF; // Color.greed
+                blueBucket += (color & 0xFF); // Color.blue
+                if (hasAlpha) alphaBucket += (color >>> 24); // Color.alpha
+
+            }
+
+
+        }
+
+        return Color.argb(
+                (hasAlpha) ? (alphaBucket / pixelCount) : 255,
+                redBucket / pixelCount,
+                greenBucket / pixelCount,
+                blueBucket / pixelCount);
+    }
+
+    }
 
