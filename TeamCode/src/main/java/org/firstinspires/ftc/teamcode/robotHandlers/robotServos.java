@@ -8,13 +8,13 @@ import java.util.LinkedHashMap;
  * Created by Chandler on 2/19/2017.
  */
 
-public class robotServos {
+public class RobotServos {
 
     private LinkedHashMap<String, Servo> servos = new LinkedHashMap<>();
 
-    public robotServos () {}
-    public robotServos (String[] servoNames, Servo[] servos) {addServos(servoNames, servos);}
-    public robotServos (LinkedHashMap<String, Servo> servos) {addServos(servos);}
+    public RobotServos() {}
+    public RobotServos(String[] servoNames, Servo[] servos) {addServos(servoNames, servos);}
+    public RobotServos(LinkedHashMap<String, Servo> servos) {addServos(servos);}
 
     public void addServo (String servoName, Servo servo) {servos.put(servoName, servo);}
     public void addServos (String[] servoNames, Servo[] servos) {

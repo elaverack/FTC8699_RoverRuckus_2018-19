@@ -2,30 +2,30 @@ package org.firstinspires.ftc.teamcode.robotHandlers;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import java.util.Collection;
-import java.util.FormatFlagsConversionMismatchException;
 import java.util.LinkedHashMap;
 
 /**
  * Created by Chandler on 2/19/2017.
  */
 
-public class robotDrive {
+public class RobotDrive {
 
     private LinkedHashMap<String, DcMotor> driveMotors = new LinkedHashMap<>();
     private boolean hasEncoders = false; //TODO: Mod so that only a portion need encoders
-    private controlConfig gamepadConfig = null;
+    private ControlConfig gamepadConfig = null;
     private boolean doSlow = false;
     private HardwareMap hardwareMap;
     private String[] motorNames;
     private ElapsedTime runtime;
+    public static enum SIDE {LEFT, RIGHT}
     //TODO: Make circumference variable here
 
-    public robotDrive (HardwareMap hm, controlConfig config) {
+    public RobotDrive(HardwareMap hm, ControlConfig config) {
         hardwareMap = hm;
         //TODO: Make more flexible
         motorNames = new String[]{"rf", "rb", "lf", "lb"};
@@ -35,7 +35,7 @@ public class robotDrive {
         this.hasEncoders = false;
         runtime = new ElapsedTime();
     }
-    public robotDrive (HardwareMap hm, boolean hasEncoders, controlConfig config) {
+    public RobotDrive(HardwareMap hm, boolean hasEncoders, ControlConfig config) {
         hardwareMap = hm;
         //TODO: Make more flexible
         motorNames = new String[]{"rf", "rb", "lf", "lb"};
@@ -45,7 +45,7 @@ public class robotDrive {
         this.hasEncoders = hasEncoders;
         runtime = new ElapsedTime();
     }
-    public robotDrive (HardwareMap hm, controlConfig config, boolean slow) {
+    public RobotDrive(HardwareMap hm, ControlConfig config, boolean slow) {
         hardwareMap = hm;
         //TODO: Make more flexible
         motorNames = new String[]{"rf", "rb", "lf", "lb"};
@@ -55,7 +55,7 @@ public class robotDrive {
         this.hasEncoders = false;
         runtime = new ElapsedTime();
     }
-    public robotDrive (HardwareMap hm, boolean hasEncoders, controlConfig config, boolean slow) {
+    public RobotDrive(HardwareMap hm, boolean hasEncoders, ControlConfig config, boolean slow) {
         hardwareMap = hm;
         //TODO: Make more flexible
         motorNames = new String[]{"rf", "rb", "lf", "lb"};
@@ -76,8 +76,8 @@ public class robotDrive {
 
     public void drive (Gamepad gamepad) {
         if (gamepadConfig == null) return;
-        if (gamepadConfig == controlConfig.MECHANUM) {calculateValuesandDrive(-gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x); return;}
-        if (gamepadConfig == controlConfig.TANK) {
+        if (gamepadConfig == ControlConfig.MECHANUM) {calculateValuesandDrive(-gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x); return;}
+        if (gamepadConfig == ControlConfig.TANK) {
             float powerRF = -gamepad.right_stick_y, powerRB = -gamepad.right_stick_y, powerLF = -gamepad.left_stick_y, powerLB = -gamepad.left_stick_y;
             if (powerRF > 1) {powerRF = 1;} else if (powerRF < -1) {powerRF = -1;}
             if (powerRB > 1) {powerRB = 1;} else if (powerRB < -1) {powerRB = -1;}
@@ -89,13 +89,13 @@ public class robotDrive {
     }
     public void drive (Gamepad gamepad, float slow) {
         if (gamepadConfig == null) return;
-        if (gamepadConfig == controlConfig.MECHANUM) {
+        if (gamepadConfig == ControlConfig.MECHANUM) {
             if (doSlow) {calculateValuesandDrive(-gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x, slow);}
             else {calculateValuesandDrive(-gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x);}
             return;
         }
 
-        if (gamepadConfig == controlConfig.TANK) {
+        if (gamepadConfig == ControlConfig.TANK) {
             if (doSlow) {doSlowandDrive(-gamepad.left_stick_y, -gamepad.right_stick_y, slow);}
             else {
                 float powerRF = -gamepad.right_stick_y, powerRB = -gamepad.right_stick_y, powerLF = -gamepad.left_stick_y, powerLB = -gamepad.left_stick_y;
@@ -109,7 +109,7 @@ public class robotDrive {
         //TODO: Add code in-case of odd controller config
     }
 
-    private void calculateValuesandDrive (float straight, float rotate, float strafe, float slow) {
+    public void calculateValuesandDrive (float straight, float rotate, float strafe, float slow) {
 
         double powerRF, powerRB, powerLF, powerLB;
 
@@ -126,7 +126,7 @@ public class robotDrive {
         setPower("rf", powerRF); setPower("rb", powerRB); setPower("lf", powerLF); setPower("lb", powerLB);
 
     }
-    private void doSlowandDrive (float left, float right, float slow) {
+    public void doSlowandDrive (float left, float right, float slow) {
 
         double powerRF, powerRB, powerLF, powerLB;
 
@@ -141,7 +141,7 @@ public class robotDrive {
         setPower("rf", powerRF); setPower("rb", powerRB); setPower("lf", powerLF); setPower("lb", powerLB);
 
     }
-    private void calculateValuesandDrive (float straight, float rotate, float strafe) {
+    public void calculateValuesandDrive (float straight, float rotate, float strafe) {
 
         double powerRF, powerRB, powerLF, powerLB;
 
@@ -168,10 +168,9 @@ public class robotDrive {
     }
     public void setAllPowers (double power) {setPowers(motorNames, power);}
 
-    public void brake() {setAllPowers(0);}
-    public void brake(String[] motorNames) {
-        for (String motorName:motorNames) {setPower(motorName, 0);}
-    }
+    public void brake(String motorName) {setPower(motorName, 0);}
+    public void brake(String[] motorNames) {for (String motorName:motorNames) {brake(motorName);}}
+    public void brakeAll() {setAllPowers(0);}
 
     public void setMode (String motorName, DcMotor.RunMode mode) {driveMotors.get(motorName).setMode(mode);}
     public void setModes (String[] motorNames, DcMotor.RunMode mode) {
@@ -219,6 +218,35 @@ public class robotDrive {
         return Return;
     }
     public int[] getAllPositions () {return getPositions(motorNames);}
+
+    public void setDirection (String motorName, DcMotorSimple.Direction direction) {driveMotors.get(motorName).setDirection(direction);}
+    public void setDirections (String[] motorNames, DcMotorSimple.Direction direction) {
+        for (String motorName:motorNames) {setDirection(motorName, direction);}
+    }
+    public void setDirections (String[] motorNames, DcMotorSimple.Direction[] directions) {
+        if (motorNames.length != directions.length) return;
+        for (int i = 0; i < motorNames.length; i++) {setDirection(motorNames[i], directions[i]);}
+    }
+    public void setAllDirections (DcMotorSimple.Direction direction) {setDirections(motorNames, direction);}
+    public void setSideDirection (SIDE side, DcMotorSimple.Direction direction) {setDirections(getSideNames(side), direction);}
+
+    public String[] getSideNames (SIDE side) {
+        // Note: Motor names go {right side names, left side names}
+        int sideSize;
+        String[] Return;
+        switch (side) {
+            case LEFT:
+                sideSize = (motorNames.length)/2; Return = new String[sideSize];
+                for (int i = 0; i < sideSize; i++) {Return[i] = motorNames[i+sideSize];}
+                return Return;
+            case RIGHT:
+                sideSize = (motorNames.length)/2; Return = new String[sideSize];
+                for (int i = 0; i < sideSize; i++) {Return[i] = motorNames[i];}
+                return Return;
+            default:
+                return null;
+        }
+    }
 
     public void forwardOneFullRotation (int motorGearBox, double power, LinearOpMode opMode) {
         if (!hasEncoders) return;

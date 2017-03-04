@@ -2,45 +2,44 @@ package org.firstinspires.ftc.teamcode.robotHandlers;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.Servo;
 
 /**
  * Created by Chandler on 2/19/2017.
  */
 
-public class robotHandler {
+public class RobotHandler {
     //TODO: Add more as needed
 
-    private robotConfig config;
+    private RobotConfig config;
     private LinearOpMode opMode;
 
-    public robotHandler (LinearOpMode opMode, robotConfig config) {
+    public RobotHandler(LinearOpMode opMode, RobotConfig config) {
         this.opMode = opMode;
         this.config = config;
     }
-    public robotHandler (LinearOpMode opMode, controlConfig config, boolean slow) {
+    public RobotHandler(LinearOpMode opMode, ControlConfig config, boolean slow) {
         this.opMode = opMode;
-        this.config = new robotConfig(new robotDrive(opMode.hardwareMap, config, slow));
+        this.config = new RobotConfig(new RobotDrive(opMode.hardwareMap, config, slow));
     }
-    public robotHandler (LinearOpMode opMode, boolean hasEncoders, controlConfig config) {
+    public RobotHandler(LinearOpMode opMode, boolean hasEncoders, ControlConfig config) {
         this.opMode = opMode;
-        this.config = new robotConfig(new robotDrive(opMode.hardwareMap, hasEncoders, config));
+        this.config = new RobotConfig(new RobotDrive(opMode.hardwareMap, hasEncoders, config));
     }
-    public robotHandler (LinearOpMode opMode, boolean hasEncoders, controlConfig config, boolean slow) {
+    public RobotHandler(LinearOpMode opMode, boolean hasEncoders, ControlConfig config, boolean slow) {
         this.opMode = opMode;
-        this.config = new robotConfig(new robotDrive(opMode.hardwareMap, hasEncoders, config, slow));
+        this.config = new RobotConfig(new RobotDrive(opMode.hardwareMap, hasEncoders, config, slow));
     }
-    public robotHandler (LinearOpMode opMode, controlConfig config, boolean slow, robotServos servos) {
+    public RobotHandler(LinearOpMode opMode, ControlConfig config, boolean slow, RobotServos servos) {
         this.opMode = opMode;
-        this.config = new robotConfig(new robotDrive(opMode.hardwareMap, config, slow), servos);
+        this.config = new RobotConfig(new RobotDrive(opMode.hardwareMap, config, slow), servos);
     }
-    public robotHandler (LinearOpMode opMode, boolean hasEncoders, controlConfig config, robotServos servos) {
+    public RobotHandler(LinearOpMode opMode, boolean hasEncoders, ControlConfig config, RobotServos servos) {
         this.opMode = opMode;
-        this.config = new robotConfig(new robotDrive(opMode.hardwareMap, hasEncoders, config), servos);
+        this.config = new RobotConfig(new RobotDrive(opMode.hardwareMap, hasEncoders, config), servos);
     }
-    public robotHandler (LinearOpMode opMode, boolean hasEncoders, controlConfig config, boolean slow, robotServos servos) {
+    public RobotHandler(LinearOpMode opMode, boolean hasEncoders, ControlConfig config, boolean slow, RobotServos servos) {
         this.opMode = opMode;
-        this.config = new robotConfig(new robotDrive(opMode.hardwareMap, hasEncoders, config, slow), servos);
+        this.config = new RobotConfig(new RobotDrive(opMode.hardwareMap, hasEncoders, config, slow), servos);
     }
 
     public void drive (Gamepad gamepad) {config.getRobotDrive().drive(gamepad);}

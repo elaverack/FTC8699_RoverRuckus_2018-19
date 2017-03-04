@@ -13,3 +13,6 @@ apply from: '../build.common.gradle'
 dependencies {
     compile project(':openCVLibrary320')
 }
+android {
+    buildToolsVersion '25.0.0'
+}

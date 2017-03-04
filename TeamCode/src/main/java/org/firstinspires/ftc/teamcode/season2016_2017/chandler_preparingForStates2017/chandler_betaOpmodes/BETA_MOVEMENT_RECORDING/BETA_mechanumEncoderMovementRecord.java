@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.season2016_2017.chandler_preparingForStat
 
 import android.os.Environment;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -19,7 +20,7 @@ import java.util.Vector;
 // Created on 1/18/2017 at 4:42 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.season2016_2017.chandler_preparingForStates2017.chandler_betaOpmodes
 
 @TeleOp(name = "MECH-EN-Record-Test", group = "BETA")
-//@Disabled
+@Disabled
 public class BETA_mechanumEncoderMovementRecord extends OpMode {
     //Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();

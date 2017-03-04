@@ -8,7 +8,7 @@ import android.hardware.SensorManager;
  * Created by Chandler on 2/19/2017.
  */
 
-public class robotSensors {
+public class RobotSensors {
 
 //TODO: Actually write this
 

@@ -1,23 +1,23 @@
 package org.firstinspires.ftc.teamcode.robotHandlers;
 
-public class robotConfig {
+public class RobotConfig {
 
-    private robotDrive robotDrive;
+    private RobotDrive robotDrive;
 
-    private robotServos servos = null;
+    private RobotServos servos = null;
     private final boolean HAS_SERVOS;
 
-    private robotSensors sensors = null;
+    private RobotSensors sensors = null;
     private final boolean HAS_SENSORS = false;
 
-    public robotConfig (robotDrive d) {
+    public RobotConfig(RobotDrive d) {
 
         robotDrive = d;
         HAS_SERVOS = false;
         //HAS_SENSORS = false;
 
     }
-    public robotConfig (robotDrive d, robotServos s) {
+    public RobotConfig(RobotDrive d, RobotServos s) {
 
         robotDrive = d;
         servos = s;
@@ -25,9 +25,9 @@ public class robotConfig {
         //HAS_SENSORS = false;
 
     }
-    /* public robotConfig (robotDrive d, robotServos s, robotSensors sen) {
+    /* public RobotConfig (RobotDrive d, RobotServos s, RobotSensors sen) {
 
-        robotDrive = d;
+        RobotDrive = d;
         servos = s;
         HAS_SERVOS = true;
         sensors = sen;
@@ -35,10 +35,10 @@ public class robotConfig {
 
     } */
 
-    public robotDrive getRobotDrive() {return robotDrive;}
-    public robotServos getServos () {return servos;}
+    public RobotDrive getRobotDrive() {return robotDrive;}
+    public RobotServos getServos () {return servos;}
     public boolean hasServos () {return HAS_SERVOS;}
-    //public robotSensors getSensors () {return sensors;}
+    //public RobotSensors getSensors () {return sensors;}
     public boolean hasSensors () {return HAS_SENSORS;}
 
 }
