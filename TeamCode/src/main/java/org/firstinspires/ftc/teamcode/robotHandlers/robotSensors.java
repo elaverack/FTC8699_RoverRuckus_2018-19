@@ -10,6 +10,7 @@ import android.hardware.SensorManager;
 
 public class RobotSensors {
 
-//TODO: Actually write this
+    //Note: This is just a puppet class for robot specific classes to extend.
+    RobotSensors(){}
 
 }

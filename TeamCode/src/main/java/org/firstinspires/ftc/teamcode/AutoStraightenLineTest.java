@@ -35,24 +35,22 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
+import org.firstinspires.ftc.teamcode.robotHandlers.MultiplexedColorSensors;
 import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
-// Created on 3/3/2017 at 8:44 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 3/2/2017 at 8:10 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "AutoPush2Test", group = "Linear Opmode")
+@Autonomous(name = "AutoStraightenLineTest", group = "Linear Opmode")
 //@Disabled
-public class AutoPush2Test extends LinearOpMode {
+public class AutoStraightenLineTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private StandardRobotDrive drive;
-    private Servo beacon_presser;
-    private final double
-            POSITION_UP = 0,
-            POSITION_DOWN = 1;
+    private MultiplexedColorSensors colorSensors;
+    private final int NUMBER_OF_SENSORS = 2;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -61,7 +59,7 @@ public class AutoPush2Test extends LinearOpMode {
         drive.setSideDirection(StandardRobotDrive.SIDE.LEFT, DcMotorSimple.Direction.FORWARD);
         drive.setSideDirection(StandardRobotDrive.SIDE.RIGHT, DcMotorSimple.Direction.REVERSE);
 
-        beacon_presser = hardwareMap.servo.get("beacon");
+        colorSensors = new MultiplexedColorSensors(this.hardwareMap, "mux", "ada", NUMBER_OF_SENSORS, MultiplexedColorSensors.ATIME.FASTEST, MultiplexedColorSensors.GAIN._16X);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -69,41 +67,22 @@ public class AutoPush2Test extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        sleep(500);
-        press(2);
-        drive.stopAll();
+        straightenOnWhiteLine(1);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            telemetry.addData("Status", "Done pressing beacon.");
-            telemetry.update();
+            telemetry.addData("Status", "Straightened on white line."); telemetry.update();
         }
     }
 
-    private final double
-            BACK_UP_POWER = -.15,
-            PRESS_POWER = .1;
-    private final long
-            PRESS_TIME = 1500,
-            BACK_UP_TIME = 250,
-            INTERVAL_TIME = 100;
-    private void press(int times) throws InterruptedException {
-        for (int i = 0; i < times; i++) {
-            if (!opModeIsActive()) return;
-            drive.setAllPowers(BACK_UP_POWER);
-            sleep(BACK_UP_TIME);
-            drive.stopAll();
-            sleep(INTERVAL_TIME);
-            beacon_presser.setPosition(POSITION_DOWN);
-            drive.setAllPowers(PRESS_POWER);
-            sleep(PRESS_TIME);
-            drive.stopAll();
-            sleep(INTERVAL_TIME);
-            drive.setAllPowers(BACK_UP_POWER);
-            sleep(BACK_UP_TIME);
-            drive.stopAll();
-            sleep(INTERVAL_TIME);
+    private void straightenOnWhiteLine (int port) {
+        drive.setSidePower(StandardRobotDrive.SIDE.RIGHT, .1);
+        drive.setSidePower(StandardRobotDrive.SIDE.LEFT, -.1);
+        boolean Break = false;
+        while (!Break) {
+            if (Break = (!opModeIsActive())) continue;
+            Break = colorSensors.colorTemp(port) > 4001;
         }
-        beacon_presser.setPosition(POSITION_UP);
+        drive.stopAll();
     }
 }

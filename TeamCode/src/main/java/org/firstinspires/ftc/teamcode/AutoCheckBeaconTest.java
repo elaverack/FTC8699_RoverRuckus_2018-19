@@ -32,56 +32,74 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
-import org.firstinspires.ftc.teamcode.robotHandlers.MultiplexedColorSensors;
-import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
+import org.firstinspires.ftc.teamcode.robotHandlers.ToggleManager;
 
-// Created on 3/2/2017 at 8:10 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 3/6/2017 at 10:19 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "AutoLineTest", group = "Linear Opmode")
+@TeleOp(name = "AutoCheckBeaconTest", group = "Iterative Opmode")
+// @Autonomous(...) is the other common choice
 //@Disabled
-public class AutoLineTest extends LinearOpMode {
-
+public class AutoCheckBeaconTest extends OpMode {
+    //Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private StandardRobotDrive drive;
-    private MultiplexedColorSensors colorSensors;
-    private final int NUMBER_OF_SENSORS = 2;
 
+    private Vuforia2017Manager vuforia;
+
+    private ToggleManager checkBeaconToggle;
+
+    //Code to run ONCE when the driver hits INIT
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void init() {
 
-        drive = new StandardRobotDrive(hardwareMap);
-        drive.setSideDirection(StandardRobotDrive.SIDE.LEFT, DcMotorSimple.Direction.FORWARD);
-        drive.setSideDirection(StandardRobotDrive.SIDE.RIGHT, DcMotorSimple.Direction.REVERSE);
+        vuforia = new Vuforia2017Manager(true);
 
-        colorSensors = new MultiplexedColorSensors(this.hardwareMap, "mux", "ada", NUMBER_OF_SENSORS, MultiplexedColorSensors.ATIME.FASTEST, MultiplexedColorSensors.GAIN._16X);
+        checkBeaconToggle = new ToggleManager() {
+            @Override
+            public void onToggle() {
+                try {
+                    vuforia.checkOnBeacons(1);
+                } catch (Exception e) {
+                    //meh
+                }
+            }
+        };
 
         telemetry.addData("Status", "Initialized");
-        telemetry.update();
-        // Wait for the game to start (driver presses PLAY)
-        waitForStart();
+
+    }
+
+    //Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
+    @Override
+    public void init_loop() {}
+
+    //Code to run ONCE when the driver hits PLAY
+    @Override
+    public void start() {
         runtime.reset();
-
-        goToWhiteLine(0);
-
-        // run until the end of the match (driver presses STOP)
-        while (opModeIsActive()) {
-            telemetry.addData("Status", "On white line."); telemetry.update();
-        }
+        vuforia.start();
     }
 
-    private void goToWhiteLine (int port) {
-        drive.setAllPowers(.1);
-        boolean Break = false;
-        while (!Break) {
-            if (Break = (!opModeIsActive())) continue;
-            Break = colorSensors.colorTemp(port) > 4001;
-        }
-        drive.stopAll();
+    //Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
+    @Override
+    public void loop() {
+
+        checkBeaconToggle.doToggle(gamepad1.a);
+
+        telemetry.addData("Status", "Running: " + runtime.toString());
+        telemetry.addData("Beacon Config", Vuforia2017Manager.decodeBeaconConfig(vuforia.getBeaconConfig(1)));
     }
+
+    //Code to run ONCE after the driver hits STOP
+    @Override
+    public void stop() {
+
+        // eg: Set all motor powers to 0
+
+
+    }
+
 }

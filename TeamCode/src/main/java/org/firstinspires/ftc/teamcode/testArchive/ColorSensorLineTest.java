@@ -36,13 +36,12 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
 import org.firstinspires.ftc.teamcode.robotHandlers.DebugLogger;
 import org.firstinspires.ftc.teamcode.robotHandlers.MultiplexedColorSensors;
-import org.firstinspires.ftc.teamcode.robotHandlers.RobotDrive;
+import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
 // Created on 2/27/2017 at 8:58 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
@@ -51,7 +50,7 @@ import org.firstinspires.ftc.teamcode.robotHandlers.RobotDrive;
 public class ColorSensorLineTest extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private RobotDrive drive;
+    private StandardRobotDrive drive;
     private DebugLogger log;
     private MultiplexedColorSensors colorSensors;
     private final int numberOfSensors = 2;
@@ -63,11 +62,11 @@ public class ColorSensorLineTest extends OpMode {
         log = new DebugLogger();
 
         log.log("Initializing drive...");
-        drive = new RobotDrive(this.hardwareMap, true, ControlConfig.MECHANUM, true);
+        drive = new StandardRobotDrive(this.hardwareMap);
 
         log.log("Done. Setting motor directions...");
-        drive.setSideDirection(RobotDrive.SIDE.LEFT, DcMotorSimple.Direction.FORWARD);
-        drive.setSideDirection(RobotDrive.SIDE.RIGHT, DcMotorSimple.Direction.REVERSE);
+        drive.setSideDirection(StandardRobotDrive.SIDE.LEFT, DcMotorSimple.Direction.FORWARD);
+        drive.setSideDirection(StandardRobotDrive.SIDE.RIGHT, DcMotorSimple.Direction.REVERSE);
         log.log("Done. Initializing multiplexer...");
 
         colorSensors = new MultiplexedColorSensors(this.hardwareMap, "mux", "ada", numberOfSensors, MultiplexedColorSensors.ATIME.SLOWEST, MultiplexedColorSensors.GAIN._16X);
@@ -114,7 +113,7 @@ public class ColorSensorLineTest extends OpMode {
 
     //Code to run ONCE after the driver hits STOP
     @Override
-    public void stop() {drive.brakeAll(); log.log("Done testing color sensors."); log.close_log();}
+    public void stop() {/*drive.brakeAll();*/ log.log("Done testing color sensors."); log.close_log();}
 
     private boolean toggling = false;
     private MultiplexedColorSensors.ATIME[] toggleSet = {
@@ -153,9 +152,9 @@ public class ColorSensorLineTest extends OpMode {
 
     private void driveIfNotOnWhiteLine (int compare, boolean override) {
         if (compare < 4001 || override) {
-            drive.drive(gamepad1, gamepad1.right_trigger);
+            //drive.drive(gamepad1, gamepad1.right_trigger);
         } else {
-            drive.brakeAll();
+            //drive.brakeAll();
         }
     }
 

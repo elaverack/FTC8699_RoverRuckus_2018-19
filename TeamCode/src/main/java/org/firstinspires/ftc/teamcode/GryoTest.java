@@ -32,32 +32,30 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robotHandlers.DebugLogger;
-import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
 import org.firstinspires.ftc.teamcode.robotHandlers.RobotConfig;
 import org.firstinspires.ftc.teamcode.robotHandlers.RobotHandler;
 import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
-// Created on 2/27/2017 at 7:47 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 3/9/2017 at 8:48 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@TeleOp(name = "ConceptStreamline", group = "Iterative Opmode")
+@TeleOp(name = "GryoTest", group = "Iterative Opmode")
 //@Disabled
-public class ConceptStreamline extends OpMode {
+public class GryoTest extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private RobotHandler robot;
-    private DebugLogger log;
+    private ModernRoboticsI2cGyro gyro;
 
     //Code to run ONCE when the driver hits INIT
     @Override
     public void init() {
-
-        log = new DebugLogger();
 
         robot = new RobotHandler(new RobotConfig(new StandardRobotDrive(this.hardwareMap))) {
             @Override
@@ -104,33 +102,34 @@ public class ConceptStreamline extends OpMode {
                 new DcMotorSimple.Direction[]{DcMotorSimple.Direction.REVERSE, DcMotorSimple.Direction.FORWARD}
         );
 
-        log.log("Initialized streamline test.");
+        gyro = (ModernRoboticsI2cGyro) hardwareMap.gyroSensor.get("gyro");
+
+        gyro.calibrate();
+
         telemetry.addData("Status", "Initialized");
 
     }
 
-    //Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
     @Override
     public void init_loop() {}
 
-    //Code to run ONCE when the driver hits PLAY
     @Override
     public void start() {runtime.reset();}
 
-    //Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
     @Override
     public void loop() {
-        log.log("Driving. Run time is: " + runtime.seconds() + " seconds.");
-        telemetry.addData("Status", "Running: " + runtime.toString());
+
         robot.drive();
+
+        telemetry.addData("Status", "Running: " + runtime.toString());
+        telemetry.addData("", "Gyro Headings");
+        telemetry.addData("Heading", gyro.getHeading());
+        telemetry.addData("Heading Mode", gyro.getHeadingMode());
+        telemetry.addData("Integrating", gyro.getIntegratedZValue());
+
     }
 
-    //Code to run ONCE after the driver hits STOP
     @Override
-    public void stop() {
-        robot.getRobotDrive().stopAll();
-        log.log("Done testing streamline.");
-        log.close_log();
-    }
+    public void stop() {robot.stop();}
 
 }

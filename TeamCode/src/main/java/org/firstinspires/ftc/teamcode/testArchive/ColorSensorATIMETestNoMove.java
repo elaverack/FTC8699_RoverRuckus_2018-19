@@ -35,13 +35,11 @@ package org.firstinspires.ftc.teamcode.testArchive;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
 import org.firstinspires.ftc.teamcode.robotHandlers.DebugLogger;
 import org.firstinspires.ftc.teamcode.robotHandlers.MultiplexedColorSensors;
-import org.firstinspires.ftc.teamcode.robotHandlers.RobotDrive;
+import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
 // Created on 2/27/2017 at 8:58 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
@@ -50,7 +48,7 @@ import org.firstinspires.ftc.teamcode.robotHandlers.RobotDrive;
 public class ColorSensorATIMETestNoMove extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private RobotDrive drive;
+    private StandardRobotDrive drive;
     private DebugLogger log;
     private MultiplexedColorSensors colorSensors;
     private final int numberOfSensors = 2;

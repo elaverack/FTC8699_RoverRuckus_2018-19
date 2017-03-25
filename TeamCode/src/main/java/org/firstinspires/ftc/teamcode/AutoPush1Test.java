@@ -34,13 +34,12 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
-import org.firstinspires.ftc.teamcode.robotHandlers.RobotDrive;
+import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
 // Created on 3/3/2017 at 8:44 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
@@ -49,7 +48,7 @@ import org.firstinspires.ftc.teamcode.robotHandlers.RobotDrive;
 public class AutoPush1Test extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private RobotDrive drive;
+    private StandardRobotDrive drive;
     private Servo beacon_presser;
     private final double
             POSITION_UP = 0,
@@ -58,9 +57,9 @@ public class AutoPush1Test extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        drive = new RobotDrive(hardwareMap, true, ControlConfig.MECHANUM, true);
-        drive.setSideDirection(RobotDrive.SIDE.LEFT, DcMotorSimple.Direction.FORWARD);
-        drive.setSideDirection(RobotDrive.SIDE.RIGHT, DcMotorSimple.Direction.REVERSE);
+        drive = new StandardRobotDrive(hardwareMap);
+        drive.setSideDirection(StandardRobotDrive.SIDE.LEFT, DcMotorSimple.Direction.FORWARD);
+        drive.setSideDirection(StandardRobotDrive.SIDE.RIGHT, DcMotorSimple.Direction.REVERSE);
 
         beacon_presser = hardwareMap.servo.get("beacon");
 
@@ -92,16 +91,16 @@ public class AutoPush1Test extends LinearOpMode {
             if (!opModeIsActive()) return;
             drive.setAllPowers(BACK_UP_POWER);
             sleep(BACK_UP_TIME);
-            drive.brakeAll();
+            drive.stopAll();
             sleep(INTERVAL_TIME);
             beacon_presser.setPosition(POSITION_DOWN);
             drive.setAllPowers(PRESS_POWER);
             sleep(PRESS_TIME);
-            drive.brakeAll();
+            drive.stopAll();
             sleep(INTERVAL_TIME);
             drive.setAllPowers(BACK_UP_POWER);
             sleep(BACK_UP_TIME);
-            drive.brakeAll();
+            drive.stopAll();
             sleep(INTERVAL_TIME);
         }
         beacon_presser.setPosition(POSITION_UP);
