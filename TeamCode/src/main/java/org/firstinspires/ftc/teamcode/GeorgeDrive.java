@@ -40,7 +40,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 // Created on 2/15/2017 at 9:18 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.season2016_2017.chandler_preparingForStates2017
 
-@TeleOp(name = "GeorgeDrive", group = "COMP")
+@TeleOp(name = "JorgeDrive", group = "COMP")
 // @Autonomous(...) is the other common choice
 //@Disabled
 public class GeorgeDrive extends OpMode {
@@ -66,7 +66,7 @@ public class GeorgeDrive extends OpMode {
 
     private Servo loader; //TODO: Test and set these values
         private final double LOAD = 0;
-        private final double UNLOAD = 0.67;
+        private final double UNLOAD = 0.39;
 
     private float rightStickY;
     private float rightStickX;
