@@ -11,9 +11,10 @@ public abstract class ToggleManager {
     public abstract void onToggle();
 
     public void doToggle (boolean toggle) {
-        if (toggling) return;
         if (!toggle) {toggling = false; return;}
+        if (toggling) return;
         onToggle();
+        toggling = true;
     }
 
 }

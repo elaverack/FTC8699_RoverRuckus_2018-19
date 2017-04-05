@@ -16,6 +16,7 @@ import com.vuforia.Vuforia;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import org.firstinspires.ftc.teamcode.robotHandlers.DebugLogger;
@@ -40,8 +41,7 @@ import java.util.Arrays;
 
 public class Vuforia2017Manager {
 
-    private final File PHOTO_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-    private final String SAVE_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Servo Test Saves";
+    private final String PHOTO_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Photos";
     private final static int ERROR = 0;
     private final static int BLUE_RED = 1;
     private final static int RED_BLUE = 2;
@@ -113,6 +113,10 @@ public class Vuforia2017Manager {
         log.log("Initialized Vuforia.");
 
         DO_SAVE = doSave;
+        if (DO_SAVE) {
+            File photo_dir = new File(PHOTO_DIRECTORY);
+            if (photo_dir.isDirectory() && !photo_dir.exists()) photo_dir.mkdir();
+        }
     }
 
     public void start() {beacons.activate(); log.log("Started Vuforia.");}
@@ -121,7 +125,8 @@ public class Vuforia2017Manager {
     public void checkOnBeacons(int beaconIndex) throws InterruptedException {
 
         if (beaconIndex == 1) {
-            if (beacon1Config <= 0 && beacons.get(BEACON_1) != null) {
+            VuforiaTrackableDefaultListener BEACON = (VuforiaTrackableDefaultListener) beacons.get(BEACON_1);
+            if (beacon1Config <= 0 && (BEACON != null && BEACON.getRawPose() != null)) {
                 vuforia.setFrameQueueCapacity(5);
                 Bitmap beacon = getBeacon(getImageFromFrame(vuforia.getFrameQueue().take(), PIXEL_FORMAT.RGB565), (VuforiaTrackableDefaultListener) beacons.get(BEACON_1).getListener(), vuforia.getCameraCalibration());
                 int[] values = processImageOpenCV(beacon, BLUE_LOW, BLUE_HIGH);
@@ -133,7 +138,8 @@ public class Vuforia2017Manager {
                 beacon1Config = values[0];
             }
         } else if (beaconIndex == 2) {
-            if (beacon2Config <= 0 && beacons.get(BEACON_2) != null) {
+            VuforiaTrackableDefaultListener BEACON = (VuforiaTrackableDefaultListener) beacons.get(BEACON_2);
+            if (beacon2Config <= 0 && (BEACON != null && BEACON.getRawPose() != null)) {
                 vuforia.setFrameQueueCapacity(5);
                 Bitmap beacon = getBeacon(getImageFromFrame(vuforia.getFrameQueue().take(), PIXEL_FORMAT.RGB565), (VuforiaTrackableDefaultListener) beacons.get(BEACON_2).getListener(), vuforia.getCameraCalibration());
                 int[] values = processImageOpenCV(beacon, BLUE_LOW, BLUE_HIGH);
@@ -470,6 +476,10 @@ public class Vuforia2017Manager {
         if (index != 1 && index != 2) return -1;
         if (index == 1) return beacon1Config;
         return beacon2Config;
+    }
+
+    public void closeLog() {
+        log.close_log();
     }
 
 }

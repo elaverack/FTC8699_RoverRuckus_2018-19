@@ -37,7 +37,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
 import org.firstinspires.ftc.teamcode.robotHandlers.MultiplexedColorSensors;
 import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
@@ -69,9 +68,21 @@ public class AutoStraightenLineTest extends LinearOpMode {
 
         straightenOnWhiteLine(1);
 
+        telemetry.clear();
+
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            telemetry.addData("Status", "Straightened on white line."); telemetry.update();
+            telemetry.addData("Status", "Straightened on white line.");
+            for (int i = 0; i < NUMBER_OF_SENSORS; i++) {
+                int[] CRGB = colorSensors.getCRGB(i);
+                telemetry.addData("", "Values for sensor " + (i + 1));
+                telemetry.addData("Clear", CRGB[0]);
+                telemetry.addData("Red", CRGB[1]);
+                telemetry.addData("Green", CRGB[2]);
+                telemetry.addData("Blue", CRGB[3]);
+                telemetry.addData("Color Temp", colorSensors.colorTemp(i));
+            }
+            telemetry.update();
         }
     }
 
@@ -82,6 +93,16 @@ public class AutoStraightenLineTest extends LinearOpMode {
         while (!Break) {
             if (Break = (!opModeIsActive())) continue;
             Break = colorSensors.colorTemp(port) > 4001;
+            for (int i = 0; i < NUMBER_OF_SENSORS; i++) {
+                int[] CRGB = colorSensors.getCRGB(i);
+                telemetry.addData("", "Values for sensor " + (i + 1));
+                telemetry.addData("Clear", CRGB[0]);
+                telemetry.addData("Red", CRGB[1]);
+                telemetry.addData("Green", CRGB[2]);
+                telemetry.addData("Blue", CRGB[3]);
+                telemetry.addData("Color Temp", colorSensors.colorTemp(i));
+            }
+            telemetry.update();
         }
         drive.stopAll();
     }

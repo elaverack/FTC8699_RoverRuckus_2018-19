@@ -10,9 +10,9 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 public abstract class RobotHandler {
     //TODO: Add more as needed
 
-    private RobotConfig config;
+    protected RobotConfig config;
 
-    RobotHandler(){}
+    protected RobotHandler(){}
     public RobotHandler(RobotConfig config) {this.config = config;}
 
     public abstract void drive();

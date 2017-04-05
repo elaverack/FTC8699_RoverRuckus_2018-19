@@ -97,8 +97,7 @@ public class AutoCheckBeaconTest extends OpMode {
     @Override
     public void stop() {
 
-        // eg: Set all motor powers to 0
-
+        vuforia.closeLog();
 
     }
 

@@ -76,9 +76,7 @@ public class RobotMotors {
     public void stopAll () {setAllPowers(0);}
 
 
-    String[] getAllMotorNames () {
-        return (String[])this.motors.keySet().toArray();
-    }
+    String[] getAllMotorNames () {return this.motors.keySet().toArray(new String[]{});}
 
 
 }

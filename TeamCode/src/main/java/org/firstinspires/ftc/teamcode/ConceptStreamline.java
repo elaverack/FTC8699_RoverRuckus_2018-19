@@ -42,6 +42,7 @@ import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
 import org.firstinspires.ftc.teamcode.robotHandlers.RobotConfig;
 import org.firstinspires.ftc.teamcode.robotHandlers.RobotHandler;
 import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
+import org.firstinspires.ftc.teamcode.robots.Jorge;
 
 // Created on 2/27/2017 at 7:47 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
@@ -50,7 +51,8 @@ import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 public class ConceptStreamline extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private RobotHandler robot;
+    //private RobotHandler robot;
+    private Jorge jorge;
     private DebugLogger log;
 
     //Code to run ONCE when the driver hits INIT
@@ -59,7 +61,7 @@ public class ConceptStreamline extends OpMode {
 
         log = new DebugLogger();
 
-        robot = new RobotHandler(new RobotConfig(new StandardRobotDrive(this.hardwareMap))) {
+        /*robot = new RobotHandler(new RobotConfig(new StandardRobotDrive(this.hardwareMap))) {
             @Override
             public void drive() {
 
@@ -102,7 +104,9 @@ public class ConceptStreamline extends OpMode {
         robot.getRobotDrive().setSideDirections(
                 new StandardRobotDrive.SIDE[]{StandardRobotDrive.SIDE.RIGHT, StandardRobotDrive.SIDE.LEFT},
                 new DcMotorSimple.Direction[]{DcMotorSimple.Direction.REVERSE, DcMotorSimple.Direction.FORWARD}
-        );
+        );*/
+
+        jorge = new Jorge(this, hardwareMap);
 
         log.log("Initialized streamline test.");
         telemetry.addData("Status", "Initialized");
@@ -122,13 +126,13 @@ public class ConceptStreamline extends OpMode {
     public void loop() {
         log.log("Driving. Run time is: " + runtime.seconds() + " seconds.");
         telemetry.addData("Status", "Running: " + runtime.toString());
-        robot.drive();
+        jorge.drive();
     }
 
     //Code to run ONCE after the driver hits STOP
     @Override
     public void stop() {
-        robot.getRobotDrive().stopAll();
+        jorge.stop();
         log.log("Done testing streamline.");
         log.close_log();
     }
