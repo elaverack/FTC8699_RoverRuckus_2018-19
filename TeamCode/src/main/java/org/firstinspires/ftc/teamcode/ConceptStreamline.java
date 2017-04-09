@@ -106,7 +106,7 @@ public class ConceptStreamline extends OpMode {
                 new DcMotorSimple.Direction[]{DcMotorSimple.Direction.REVERSE, DcMotorSimple.Direction.FORWARD}
         );*/
 
-        jorge = new Jorge(this, hardwareMap);
+        jorge = new Jorge(this);
 
         log.log("Initialized streamline test.");
         telemetry.addData("Status", "Initialized");

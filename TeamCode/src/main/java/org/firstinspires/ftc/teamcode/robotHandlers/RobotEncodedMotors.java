@@ -11,11 +11,17 @@ public class RobotEncodedMotors extends RobotMotors {
 
     RobotEncodedMotors(){}
     public RobotEncodedMotors (HardwareMap hm) {this.hardwareMap = hm;}
-    public RobotEncodedMotors (HardwareMap hm, String motorName, DcMotor motor) {
+    @Deprecated public RobotEncodedMotors (HardwareMap hm, String motorName, DcMotor motor) {
         this.hardwareMap = hm; addMotor(motorName, motor);
     }
-    public RobotEncodedMotors (HardwareMap hm, String[] motorNames, DcMotor[] motors) {
+    @Deprecated public RobotEncodedMotors (HardwareMap hm, String[] motorNames, DcMotor[] motors) {
         this.hardwareMap = hm; addMotors(motorNames, motors);
+    }
+    public RobotEncodedMotors (HardwareMap hm, String motorName) {
+        this.hardwareMap = hm; addMotor(motorName);
+    }
+    public RobotEncodedMotors (HardwareMap hm, String[] motorNames) {
+        this.hardwareMap = hm; addMotors(motorNames);
     }
 
     public void setTargetPosition (String motorName, int position, double power) {
@@ -54,6 +60,18 @@ public class RobotEncodedMotors extends RobotMotors {
         return Return;
     }
     public int[] getAllPositions () {return getPositions(getAllMotorNames());}
+
+    public int getTargetPosition (String motorName) {
+        return motors.get(motorName).getTargetPosition();
+    }
+    public int[] getTargetPositions (String[] motorNames) {
+        int[] Return = new int[motorNames.length];
+        for (int i = 0; i < motorNames.length; i++) {
+            Return[i] = getTargetPosition(motorNames[i]);
+        }
+        return Return;
+    }
+    public int[] getAllTargetPositions () {return getTargetPositions(getAllMotorNames());}
 
     public boolean updateMotor (String motorName) {
         DcMotor motor = getMotor(motorName);

@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.robotHandlers;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.robot.Robot;
 
 import java.util.LinkedHashMap;
 
@@ -17,17 +18,27 @@ public class RobotMotors {
 
     RobotMotors(){}
     public RobotMotors (HardwareMap hm) {this.hardwareMap = hm;}
-    public RobotMotors (HardwareMap hm, String motorName, DcMotor motor) {
+    @Deprecated public RobotMotors (HardwareMap hm, String motorName, DcMotor motor) {
         this.hardwareMap = hm; addMotor(motorName, motor);
     }
-    public RobotMotors (HardwareMap hm, String[] motorNames, DcMotor[] motors) {
+    @Deprecated public RobotMotors (HardwareMap hm, String[] motorNames, DcMotor[] motors) {
         this.hardwareMap = hm; addMotors(motorNames, motors);
     }
+    public RobotMotors (HardwareMap hm, String motorName) {
+        this.hardwareMap = hm; addMotor(motorName, hardwareMap.dcMotor.get(motorName));
+    }
+    public RobotMotors (HardwareMap hm, String[] motorNames) {
+        this.hardwareMap = hm; addMotors(motorNames);
+    }
 
-    public void addMotor (String motorName, DcMotor motor) {this.motors.put(motorName, motor);}
-    public void addMotors (String[] motorNames, DcMotor[] motors) {
+    @Deprecated public void addMotor (String motorName, DcMotor motor) {this.motors.put(motorName, motor);}
+    @Deprecated public void addMotors (String[] motorNames, DcMotor[] motors) {
         if (motorNames.length != motors.length) return;
         for (int i = 0; i < motorNames.length; i++) {addMotor(motorNames[i], motors[i]);}
+    }
+    public void addMotor (String motorName) {this.motors.put(motorName, hardwareMap.dcMotor.get(motorName));}
+    public void addMotors (String[] motorNames) {
+        for (String motorName : motorNames) {addMotor(motorName);}
     }
 
     public DcMotor getMotor (String motorName) {return motors.get(motorName);}

@@ -21,9 +21,7 @@ public class StandardRobotDrive extends RobotMotors {
 
     public StandardRobotDrive(HardwareMap hm) {
         hardwareMap = hm;
-        String[] motorNames = new String[]{"rf", "rb", "lf", "lb"};
-        for (String name:motorNames) {
-            motors.put(name, hardwareMap.dcMotor.get(name));}
+        addMotors(new String[]{"rf", "rb", "lf", "lb"});
     }
 
     public void setSidePower (SIDE side, double power) {setPowers(side.names, power);}

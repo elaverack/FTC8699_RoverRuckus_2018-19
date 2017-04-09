@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.robotHandlers;
 
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import java.util.LinkedHashMap;
@@ -11,15 +12,22 @@ import java.util.LinkedHashMap;
 public class RobotServos {
 
     private LinkedHashMap<String, Servo> servos = new LinkedHashMap<>();
+    private HardwareMap hardwareMap;
 
-    public RobotServos() {}
-    public RobotServos(String[] servoNames, Servo[] servos) {addServos(servoNames, servos);}
-    public RobotServos(LinkedHashMap<String, Servo> servos) {addServos(servos);}
+    protected RobotServos() {}
+    //public RobotServos(String[] servoNames, Servo[] servos) {addServos(servoNames, servos);}
+    //public RobotServos(LinkedHashMap<String, Servo> servos) {addServos(servos);}
+    public RobotServos (HardwareMap hm, String servoName) {this.hardwareMap = hm; addServo(servoName);}
+    public RobotServos (HardwareMap hm, String[] servoNames) {this.hardwareMap = hm; addServos(servoNames);}
 
-    public void addServo (String servoName, Servo servo) {servos.put(servoName, servo);}
-    public void addServos (String[] servoNames, Servo[] servos) {
+    @Deprecated public void addServo (String servoName, Servo servo) {servos.put(servoName, servo);}
+    @Deprecated public void addServos (String[] servoNames, Servo[] servos) {
         if (servoNames.length != servos.length) return;
         for (int i = 0; i < servoNames.length; i++) {addServo(servoNames[i], servos[i]);}
+    }
+    public void addServo (String servoName) {servos.put(servoName, hardwareMap.servo.get(servoName));}
+    public void addServos (String[] servoNames) {
+        for (String servoName : servoNames) {addServo(servoName);}
     }
     public void addServos (LinkedHashMap<String, Servo> servos) {this.servos.putAll(servos);}
 
@@ -39,6 +47,18 @@ public class RobotServos {
         if (servoNames.length != positions.length) return;
         for (int i = 0; i < servoNames.length; i++) {setPosition(servoNames[i], positions[i]);}
     }
-    public void setAllPositions (double position) {setPositions(servos.keySet().toArray(new String[0]), position);}
+    public void setAllPositions (double position) {setPositions(getAllNames(), position);}
+
+    public double getPosition (String servoName) {return servos.get(servoName).getPosition();}
+    public double[] getPositions (String[] servoNames) {
+        double[] Return = new double[servoNames.length];
+        for (int i = 0; i < servoNames.length; i++) {Return[i] = getPosition(servoNames[i]);}
+        return Return;
+    }
+    public double[] getAllPositions () {return getPositions(getAllNames());}
+
+    private String[] getAllNames () {
+        return servos.keySet().toArray(new String[]{});
+    }
 
 }

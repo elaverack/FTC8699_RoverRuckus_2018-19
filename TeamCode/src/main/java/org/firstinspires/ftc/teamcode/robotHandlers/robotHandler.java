@@ -10,19 +10,30 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 public abstract class RobotHandler {
     //TODO: Add more as needed
 
+    @Deprecated public StandardRobotDrive getRobotDrive() {return config.getRobotDrive();}
+    @Deprecated public RobotServos getServos () {return config.getServos();}
+    @Deprecated public RobotSensors getSensors () {return config.getSensors();}
+
     protected RobotConfig config;
+    public StandardRobotDrive drive;
+    public RobotServos servos = null;
+    public RobotSensors sensors = null;
 
     protected RobotHandler(){}
     public RobotHandler(RobotConfig config) {this.config = config;}
 
     public abstract void drive();
 
-    public StandardRobotDrive getRobotDrive() {return config.getRobotDrive();}
-    public RobotServos getServos () {return config.getServos();}
-    public boolean hasServos () {return config.hasServos();}
-    public RobotSensors getSensors () {return config.getSensors();}
-    public boolean hasSensors () {return config.hasSensors();}
-    public void stop() {config.getRobotDrive().stopAll();}
+    public void stop() {drive.stopAll();}
+
+    public int numberOfWheels () {return config.NO_WHEELS;}
+    public RobotConfig.driveType driveType () {return config.DRIVE_TYPE;}
+
+    public boolean hasServos () {return config.HAS_SERVOS;}
+    public int numberOfServos () {return config.NO_SERVOS;}
+
+    public boolean hasSensors () {return config.HAS_SENSORS;}
+    public int numberOfSensors () {return config.NO_SENSORS;}
 
 }
 

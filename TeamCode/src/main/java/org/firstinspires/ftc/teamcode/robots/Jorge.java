@@ -1,11 +1,15 @@
 package org.firstinspires.ftc.teamcode.robots;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Gamepad;
 
+import org.firstinspires.ftc.teamcode.robotHandlers.EncodedRobotDrive;
 import org.firstinspires.ftc.teamcode.robotHandlers.RobotConfig;
+import org.firstinspires.ftc.teamcode.robotHandlers.RobotEncodedMotors;
 import org.firstinspires.ftc.teamcode.robotHandlers.RobotHandler;
+import org.firstinspires.ftc.teamcode.robotHandlers.RobotServos;
 import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
 /**
@@ -15,14 +19,43 @@ import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 public class Jorge extends RobotHandler {
 
     private OpMode opMode;
+    public EncodedRobotDrive drive;
+    public RobotEncodedMotors auxMotors;
+    public RobotServos servos;
 
-    public Jorge (OpMode om, HardwareMap hm) {
-        this.config = new RobotConfig(new StandardRobotDrive(hm));
+    private static final int
+            SHOOTER_LOAD = 1150,
+            SHOOTER_FIRE = 1680;
+    public static final double
+            RUN_PICK_UP     = 1,
+            STOP_PICK_UP    = 0,
+            BEACON_DOWN     = 1, //TODO: Test and set beacon values
+            BEACON_UP       = 0,
+            LOAD            = 0,
+            UNLOAD          = 0.39;
+    public static final String
+            SHOOTER = "shoot",
+            PICKUP = "pickup",
+            BEACON_PRESSER = "beacon",
+            LOADER = "load";
+
+    public Jorge (OpMode om) {
         this.opMode = om;
-        config.getRobotDrive().setSideDirections(
+        //this.config = new RobotConfig(new StandardRobotDrive(opMode.hardwareMap));
+        //config.getRobotDrive().setSideDirections(
+        //        new StandardRobotDrive.SIDE[]{StandardRobotDrive.SIDE.RIGHT, StandardRobotDrive.SIDE.LEFT},
+        //        new DcMotorSimple.Direction[]{DcMotorSimple.Direction.REVERSE, DcMotorSimple.Direction.FORWARD}
+        //);
+
+        this.config = new RobotConfig(4, RobotConfig.driveType.MECANUM, 2, 3);
+        drive = new EncodedRobotDrive(opMode.hardwareMap);
+        drive.setSideDirections(
                 new StandardRobotDrive.SIDE[]{StandardRobotDrive.SIDE.RIGHT, StandardRobotDrive.SIDE.LEFT},
                 new DcMotorSimple.Direction[]{DcMotorSimple.Direction.REVERSE, DcMotorSimple.Direction.FORWARD}
         );
+        auxMotors = new RobotEncodedMotors(opMode.hardwareMap, new String[]{SHOOTER, PICKUP});
+        servos = new RobotServos(opMode.hardwareMap, new String[]{BEACON_PRESSER, LOADER});
+
     }
 
     public void drive() {
@@ -57,9 +90,102 @@ public class Jorge extends RobotHandler {
             powerLB /= 4 * slow;
         }
 
-        StandardRobotDrive drive = config.getRobotDrive();
         drive.setPowers(new String[]{"rf", "rb", "lf", "lb"}, new double[]{powerRF, powerRB, powerLF, powerLB});
 
+        Gamepad gamepad2 = opMode.gamepad2;
+        doPickUp(gamepad2.b);
+        load(gamepad2.right_trigger, gamepad2.x);
+        doShooting(gamepad2.a);
+
+        opMode.telemetry.addData("CAM", auxMotors.getPosition(SHOOTER));
+        opMode.telemetry.addData("CHECK", (auxMotors.getPosition(SHOOTER) > SHOOTER_FIRE || auxMotors.getPosition(SHOOTER) == SHOOTER_FIRE));
+        opMode.telemetry.addData("SHOOTING N SET", shooting + ", " + set);
+
+    }
+
+    public void stop() {drive.stopAll(); auxMotors.stopAll();}
+
+    private boolean shooting = false;
+    private boolean set = false;
+    private void doShooting (boolean trigger) {
+
+        if (!shooting && trigger) {
+            shooting = true;
+        }
+
+        if (shooting) {
+            if (!set) {
+                //shooter.setTargetPosition(SHOOTER_FIRE);
+                //shooter.setPower(.2);
+                auxMotors.setTargetPosition(SHOOTER, SHOOTER_FIRE, .5);
+                set = true;
+            }
+            if (/*(shooter.getCurrentPosition() > SHOOTER_FIRE || shooter.getCurrentPosition() == SHOOTER_FIRE)*/
+                    (auxMotors.getPosition(SHOOTER) > SHOOTER_FIRE || auxMotors.getPosition(SHOOTER) == SHOOTER_FIRE) && set) {
+                //shooter.setPower(0);
+                //shooter.setTargetPosition(0);
+                //shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                //shooter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                auxMotors.setPower(SHOOTER, 0);
+                auxMotors.setTargetPosition(SHOOTER, 0, 0);
+                auxMotors.setMode(SHOOTER, DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                auxMotors.setMode(SHOOTER, DcMotor.RunMode.RUN_TO_POSITION);
+                shooting = false;
+                set = false;
+                servos.setPosition(LOADER, UNLOAD);
+            }
+            if ((auxMotors.getPosition(SHOOTER) > (SHOOTER_FIRE/2) || auxMotors.getPosition(SHOOTER) == (SHOOTER_FIRE/2)) && set) {
+                servos.setPosition(LOADER, LOAD);
+            }
+        }
+
+    }
+
+    private void load (float override, boolean button) {
+        if (override > .25) {
+            if (button) {
+                servos.setPosition(LOADER, UNLOAD);
+            } else {
+                servos.setPosition(LOADER, LOAD);
+            }
+        }
+    }
+
+    private boolean pickupToggled = false;
+    private boolean pickupOn = false;
+    private void doPickUp (boolean toggleButton) {
+        if (!pickupToggled && toggleButton) {
+            if (!pickupOn) {
+                //pickUp.setPower(RUN_PICK_UP);
+                auxMotors.setPower(PICKUP, RUN_PICK_UP);
+                pickupOn = true;
+                pickupToggled = true;
+            } else {
+                //pickUp.setPower(STOP_PICK_UP);
+                auxMotors.setPower(PICKUP, STOP_PICK_UP);
+                pickupOn = false;
+                pickupToggled = true;
+            }
+        } else if (!toggleButton) {
+            pickupToggled = false;
+        }
+
+    }
+
+    private boolean beaconToggled = false;
+    private void doBeaconPresser (boolean toggleButton) {
+        if (!beaconToggled && toggleButton) {
+            if (/*beacon_presser.getPosition()*/ servos.getPosition(BEACON_PRESSER) == BEACON_UP) {
+                //beacon_presser.setPosition(BEACON_DOWN);
+                servos.setPosition(BEACON_PRESSER, BEACON_DOWN);
+            } else {
+                //beacon_presser.setPosition(BEACON_UP);
+                servos.setPosition(BEACON_PRESSER, BEACON_UP);
+            }
+            beaconToggled = true;
+        } else if (!toggleButton) {
+            beaconToggled = false;
+        }
     }
 
 }
