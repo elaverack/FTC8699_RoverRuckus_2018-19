@@ -32,6 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -40,16 +42,15 @@ import org.firstinspires.ftc.teamcode.robotHandlers.ToggleManager;
 
 // Created on 3/6/2017 at 10:19 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@TeleOp(name = "AutoCheckBeaconTest", group = "Iterative Opmode")
-// @Autonomous(...) is the other common choice
+@Autonomous(name = "AutoCheckBeaconTest", group = "Iterative Opmode")
 //@Disabled
-public class AutoCheckBeaconTest extends OpMode {
-    //Declare OpMode members.
+public class AutoCheckBeaconTest extends LinearOpMode {
+
     private ElapsedTime runtime = new ElapsedTime();
 
     private Vuforia2017Manager vuforia;
 
-    private ToggleManager checkBeaconToggle;
+    /*private ToggleManager checkBeaconToggle;
 
     //Code to run ONCE when the driver hits INIT
     @Override
@@ -87,7 +88,14 @@ public class AutoCheckBeaconTest extends OpMode {
     @Override
     public void loop() {
 
-        checkBeaconToggle.doToggle(gamepad1.a);
+        //checkBeaconToggle.doToggle(gamepad1.a);
+        if (gamepad1.a) {
+            try {
+                vuforia.checkOnBeacons(1);
+            } catch (Exception e) {
+                //meh
+            }
+        }
 
         telemetry.addData("Status", "Running: " + runtime.toString());
         telemetry.addData("Beacon Config", Vuforia2017Manager.decodeBeaconConfig(vuforia.getBeaconConfig(1)));
@@ -98,6 +106,24 @@ public class AutoCheckBeaconTest extends OpMode {
     public void stop() {
 
         vuforia.closeLog();
+
+    }*/
+
+    @Override
+    public void runOpMode() throws InterruptedException {
+
+        vuforia = new Vuforia2017Manager(true);
+
+        telemetry.addData("Status", "Initialized"); telemetry.update();
+        waitForStart();
+        runtime.reset();
+
+        vuforia.checkOnBeacons(1);
+        vuforia.closeLog();
+
+        while (opModeIsActive()) {
+            telemetry.addData("Beacon Config", Vuforia2017Manager.decodeBeaconConfig(vuforia.getBeaconConfig(1)));
+        }
 
     }
 

@@ -42,6 +42,7 @@ public class DebugLogger {
     public void log(String line) {
         Calendar calendar = Calendar.getInstance();
         pw.println((calendar.get(Calendar.HOUR_OF_DAY)) + "." + (calendar.get(Calendar.MINUTE)) + "." + (calendar.get(Calendar.SECOND)) + ":\t" + line);
+        pw.flush();
     }
 
     public void close_log() {

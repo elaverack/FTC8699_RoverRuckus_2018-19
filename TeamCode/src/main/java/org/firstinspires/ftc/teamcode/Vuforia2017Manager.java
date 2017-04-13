@@ -42,18 +42,23 @@ import java.util.Arrays;
 public class Vuforia2017Manager {
 
     private final String PHOTO_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Photos";
-    private final static int ERROR = 0;
-    private final static int BLUE_RED = 1;
-    private final static int RED_BLUE = 2;
-    private final static int BLUE_BLUE = 3;
-    private final static int RED_RED = 4;
-    private final static Scalar BLUE_LOW = new Scalar(100, 0, 220);
-    private final static Scalar BLUE_HIGH = new Scalar(178, 255, 255);
+    private final static int
+            ERROR = 0,
+            BLUE_RED = 1,
+            RED_BLUE = 2,
+            BLUE_BLUE = 3,
+            RED_RED = 4;
+    private final static Scalar
+            BLUE_LOW = new Scalar(100, 0, 220),
+            BLUE_HIGH = new Scalar(178, 255, 255);
 
-    private int beacon1Config = -1;
-    private final int BEACON_1 = 3;
-    private int beacon2Config = -1;
-    private final int BEACON_2 = 1;
+    private int
+            beacon1Config = -1,
+            beacon2Config = -1;
+    private final int
+            BEACON_1 = 3,
+            BEACON_2 = 1;
+
     private VuforiaTrackables beacons;
     private VuforiaLocalizer vuforia;
 
@@ -125,7 +130,7 @@ public class Vuforia2017Manager {
     public void checkOnBeacons(int beaconIndex) throws InterruptedException {
 
         if (beaconIndex == 1) {
-            VuforiaTrackableDefaultListener BEACON = (VuforiaTrackableDefaultListener) beacons.get(BEACON_1);
+            VuforiaTrackableDefaultListener BEACON = (VuforiaTrackableDefaultListener) beacons.get(BEACON_1).getListener();
             if (beacon1Config <= 0 && (BEACON != null && BEACON.getRawPose() != null)) {
                 vuforia.setFrameQueueCapacity(5);
                 Bitmap beacon = getBeacon(getImageFromFrame(vuforia.getFrameQueue().take(), PIXEL_FORMAT.RGB565), (VuforiaTrackableDefaultListener) beacons.get(BEACON_1).getListener(), vuforia.getCameraCalibration());
@@ -336,22 +341,36 @@ public class Vuforia2017Manager {
             return null;
         } else {
 
+            if (DO_SAVE) checkDir();
+
             Bitmap bm = Bitmap.createBitmap(img.getWidth(), img.getHeight(), Bitmap.Config.RGB_565);
             bm.copyPixelsFromBuffer(img.getPixels());
 
             log.log("Done. Saving bitmap.png...");
-            savePhoto(bm, "bitmap.png");
+            savePhoto(bm, "1.png");
             log.log("Done. Converting to mat and rotating...");
 
             Mat crop = new Mat(bm.getHeight(), bm.getWidth(), CvType.CV_8UC3);
             Utils.bitmapToMat(bm, crop);
             Core.flip(crop.t(), crop, 1);
 
-            log.log("Done. Converting back to bitmap and returning...");
+            savePhoto(crop, "2.png");
+
+            // Cut in half.
+            log.log("Done. Trying to cut in half...");
+            try {
+                Mat cropped = new Mat(crop, new Rect(0, (crop.rows() / 2), crop.cols(), (crop.rows() / 2)));
+                savePhoto(cropped, "3.png");
+                log.log("Done. Converting back to bitmap and returning...");
+            } catch (Exception e) {
+                log.log("Error: " + e.getMessage() + ". Converting back to bitmap and returning...");
+            }
+
+            //log.log("Done. Converting back to bitmap and returning...");
             Bitmap Return = Bitmap.createBitmap(crop.width(), crop.height(), Bitmap.Config.RGB_565);
             Utils.matToBitmap(crop, Return);
 
-            savePhoto(Return, "beaconNoCrop.png");
+            savePhoto(Return, "4.png");
 
             log.log("Done getting beacon without cropping.");
             return Return;
@@ -362,6 +381,8 @@ public class Vuforia2017Manager {
 
     private void savePhoto (Bitmap bmp, String fileName) {
         if (!DO_SAVE) return;
+
+
 
         File file = new File(PHOTO_DIRECTORY, fileName);
 
@@ -480,6 +501,13 @@ public class Vuforia2017Manager {
 
     public void closeLog() {
         log.close_log();
+    }
+
+    private void checkDir () {
+        File dir = new File(PHOTO_DIRECTORY);
+        if (dir.isDirectory() && !dir.exists()) {
+            dir.mkdir();
+        }
     }
 
 }

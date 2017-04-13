@@ -34,54 +34,44 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
-import org.firstinspires.ftc.teamcode.robotHandlers.MultiplexedColorSensors;
-import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
+import org.firstinspires.ftc.teamcode.robotHandlers.JorgeAutonomusFunctions;
+import org.firstinspires.ftc.teamcode.robots.AutonomusJorge;
+import org.firstinspires.ftc.teamcode.robots.Jorge;
 
-// Created on 3/2/2017 at 8:10 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/12/2017 at 5:57 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.testArchive
 
-@Autonomous(name = "AutoLineTest", group = "Linear Opmode")
+@Autonomous(name = "AutoFullLineTest", group = "Linear Opmode")
 //@Disabled
-public class AutoLineTest extends LinearOpMode {
+public class AutoFullLineTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private StandardRobotDrive drive;
-    private MultiplexedColorSensors colorSensors;
-    private final int NUMBER_OF_SENSORS = 2;
+
+    private AutonomusJorge jorge;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        drive = new StandardRobotDrive(hardwareMap);
-        drive.setSideDirection(StandardRobotDrive.SIDE.LEFT, DcMotorSimple.Direction.FORWARD);
-        drive.setSideDirection(StandardRobotDrive.SIDE.RIGHT, DcMotorSimple.Direction.REVERSE);
-
-        colorSensors = new MultiplexedColorSensors(this.hardwareMap, "mux", "ada", NUMBER_OF_SENSORS, MultiplexedColorSensors.ATIME.FASTEST, MultiplexedColorSensors.GAIN._16X);
+        jorge = new AutonomusJorge(this);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
-        // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
 
-        goToWhiteLine(0);
+        JorgeAutonomusFunctions.GO_TO_WHITE_LINE (jorge, AutonomusJorge.COLOR_SENSOR.BACK);
 
-        // run until the end of the match (driver presses STOP)
-        while (opModeIsActive()) {
-            telemetry.addData("Status", "On white line."); telemetry.update();
-        }
-    }
+        JorgeAutonomusFunctions.STRAIGHTEN_ON_WHITE_LINE(jorge, AutonomusJorge.COLOR_SENSOR.MIDDLE, AutonomusJorge.COLOR_SENSOR.BACK);
 
-    private void goToWhiteLine (int port) {
-        drive.setAllPowers(.1);
-        boolean Break = false;
-        while (!Break) {
-            if (Break = (!opModeIsActive())) continue;
-            Break = colorSensors.colorTemp(port) > 4001;
-        }
-        drive.stopAll();
+        //JorgeAutonomusFunctions.GO_TO_WHITE_LINE (jorge, AutonomusJorge.COLOR_SENSOR.MIDDLE);
+
+        //JorgeAutonomusFunctions.STRAIGHTEN_ON_WHITE_LINE(jorge, AutonomusJorge.COLOR_SENSOR.BACK, AutonomusJorge.COLOR_SENSOR.MIDDLE);
+
+        //Done.
+        while (opModeIsActive()) {telemetry.addData("Status", "Done. Run Time: " + runtime.toString()); telemetry.update();}
+
     }
 }

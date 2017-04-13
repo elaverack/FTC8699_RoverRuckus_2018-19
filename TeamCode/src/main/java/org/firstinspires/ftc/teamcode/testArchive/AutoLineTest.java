@@ -30,26 +30,28 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.testArchive;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.robotHandlers.ControlConfig;
 import org.firstinspires.ftc.teamcode.robotHandlers.MultiplexedColorSensors;
 import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
 // Created on 3/2/2017 at 8:10 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "AutoStraightenLineTest", group = "Linear Opmode")
+@Autonomous(name = "AutoLineTest", group = "Linear Opmode")
 //@Disabled
-public class AutoStraightenLineTest extends LinearOpMode {
+public class AutoLineTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private StandardRobotDrive drive;
     private MultiplexedColorSensors colorSensors;
     private final int NUMBER_OF_SENSORS = 2;
+    private final int WHITE_MIN = 6275;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -66,42 +68,26 @@ public class AutoStraightenLineTest extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        straightenOnWhiteLine(1);
-
-        telemetry.clear();
+        goToWhiteLine(0);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            telemetry.addData("Status", "Straightened on white line.");
-            for (int i = 0; i < NUMBER_OF_SENSORS; i++) {
-                int[] CRGB = colorSensors.getCRGB(i);
-                telemetry.addData("", "Values for sensor " + (i + 1));
-                telemetry.addData("Clear", CRGB[0]);
-                telemetry.addData("Red", CRGB[1]);
-                telemetry.addData("Green", CRGB[2]);
-                telemetry.addData("Blue", CRGB[3]);
-                telemetry.addData("Color Temp", colorSensors.colorTemp(i));
-            }
+            telemetry.addData("Status", "Done.");
+            telemetry.addData("c0", "" + colorSensors.colorTemp(0));
+            telemetry.addData("c1", "" + colorSensors.colorTemp(1));
+            telemetry.addData("c2", "" + colorSensors.colorTemp(2));
             telemetry.update();
         }
     }
 
-    private void straightenOnWhiteLine (int port) {
-        drive.setSidePower(StandardRobotDrive.SIDE.RIGHT, .1);
-        drive.setSidePower(StandardRobotDrive.SIDE.LEFT, -.1);
-        boolean Break = false;
-        while (!Break) {
-            if (Break = (!opModeIsActive())) continue;
-            Break = colorSensors.colorTemp(port) > 4001;
-            for (int i = 0; i < NUMBER_OF_SENSORS; i++) {
-                int[] CRGB = colorSensors.getCRGB(i);
-                telemetry.addData("", "Values for sensor " + (i + 1));
-                telemetry.addData("Clear", CRGB[0]);
-                telemetry.addData("Red", CRGB[1]);
-                telemetry.addData("Green", CRGB[2]);
-                telemetry.addData("Blue", CRGB[3]);
-                telemetry.addData("Color Temp", colorSensors.colorTemp(i));
-            }
+    private void goToWhiteLine (int port) {
+        drive.setAllPowers(.08);
+        while (colorSensors.colorTemp(port) < WHITE_MIN) {
+            if (!opModeIsActive()) break;
+            telemetry.addData("Status", "Looking for line...");
+            telemetry.addData("c0", "" + colorSensors.colorTemp(0));
+            telemetry.addData("c1", "" + colorSensors.colorTemp(1));
+            telemetry.addData("c2", "" + colorSensors.colorTemp(2));
             telemetry.update();
         }
         drive.stopAll();

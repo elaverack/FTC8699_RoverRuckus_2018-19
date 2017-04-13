@@ -18,19 +18,18 @@ import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
 public class Jorge extends RobotHandler {
 
-    private OpMode opMode;
+    protected OpMode opMode;
     public EncodedRobotDrive drive;
     public RobotEncodedMotors auxMotors;
     public RobotServos servos;
 
-    private static final int
-            SHOOTER_LOAD = 1150,
+    protected static final int
             SHOOTER_FIRE = 1680;
     public static final double
             RUN_PICK_UP     = 1,
             STOP_PICK_UP    = 0,
-            BEACON_DOWN     = 1, //TODO: Test and set beacon values
-            BEACON_UP       = 0,
+            BEACON_DOWN     = .27,
+            BEACON_UP       = .92,
             LOAD            = 0,
             UNLOAD          = 0.39;
     public static final String
@@ -39,6 +38,7 @@ public class Jorge extends RobotHandler {
             BEACON_PRESSER = "beacon",
             LOADER = "load";
 
+    protected Jorge(){}
     public Jorge (OpMode om) {
         this.opMode = om;
         //this.config = new RobotConfig(new StandardRobotDrive(opMode.hardwareMap));
@@ -105,9 +105,9 @@ public class Jorge extends RobotHandler {
 
     public void stop() {drive.stopAll(); auxMotors.stopAll();}
 
-    private boolean shooting = false;
-    private boolean set = false;
-    private void doShooting (boolean trigger) {
+    protected boolean shooting = false;
+    protected boolean set = false;
+    protected void doShooting (boolean trigger) {
 
         if (!shooting && trigger) {
             shooting = true;
@@ -141,7 +141,7 @@ public class Jorge extends RobotHandler {
 
     }
 
-    private void load (float override, boolean button) {
+    protected void load (float override, boolean button) {
         if (override > .25) {
             if (button) {
                 servos.setPosition(LOADER, UNLOAD);
@@ -151,9 +151,9 @@ public class Jorge extends RobotHandler {
         }
     }
 
-    private boolean pickupToggled = false;
-    private boolean pickupOn = false;
-    private void doPickUp (boolean toggleButton) {
+    protected boolean pickupToggled = false;
+    protected boolean pickupOn = false;
+    protected void doPickUp (boolean toggleButton) {
         if (!pickupToggled && toggleButton) {
             if (!pickupOn) {
                 //pickUp.setPower(RUN_PICK_UP);
@@ -172,8 +172,8 @@ public class Jorge extends RobotHandler {
 
     }
 
-    private boolean beaconToggled = false;
-    private void doBeaconPresser (boolean toggleButton) {
+    protected boolean beaconToggled = false;
+    protected void doBeaconPresser (boolean toggleButton) {
         if (!beaconToggled && toggleButton) {
             if (/*beacon_presser.getPosition()*/ servos.getPosition(BEACON_PRESSER) == BEACON_UP) {
                 //beacon_presser.setPosition(BEACON_DOWN);

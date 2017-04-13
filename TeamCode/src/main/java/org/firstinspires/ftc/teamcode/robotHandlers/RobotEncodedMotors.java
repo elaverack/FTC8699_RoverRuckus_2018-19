@@ -76,7 +76,7 @@ public class RobotEncodedMotors extends RobotMotors {
     public boolean updateMotor (String motorName) {
         DcMotor motor = getMotor(motorName);
         if (motor.getMode() != DcMotor.RunMode.RUN_TO_POSITION) return false;
-        int target = motor.getTargetPosition(); if (!inRange(motor.getCurrentPosition(), target-10, target+10)) return false;
+        int target = motor.getTargetPosition(); if (!inRange(motor.getCurrentPosition(), target-5, target+5)) return false;
 
         setMode(motorName, DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setMode(motorName, DcMotor.RunMode.RUN_TO_POSITION);
@@ -87,15 +87,15 @@ public class RobotEncodedMotors extends RobotMotors {
         for (int i = 0; i < motorNames.length; i++) {motors[i] = getMotor(motorNames[i]);}
         for (DcMotor motor : motors) {
             if (motor.getMode() != DcMotor.RunMode.RUN_TO_POSITION) return false;
-            int target = motor.getTargetPosition(); if (!inRange(motor.getCurrentPosition(), target-10, target+10)) return false;
+            int target = motor.getTargetPosition(); if (!inRange(motor.getCurrentPosition(), target-5, target+5)) return false;
         }
 
+        setPowers(motorNames, 0);
         setModes(motorNames, DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setModes(motorNames, DcMotor.RunMode.RUN_TO_POSITION);
         return true;
     }
     public boolean updateAllMotors () {return updateMotors(getAllMotorNames());}
-
 
     private boolean inRange (int comp, int min, int max) {return min < comp && comp < max;}
     private boolean inRange (double comp, double min, double max) {return min < comp && comp < max;}

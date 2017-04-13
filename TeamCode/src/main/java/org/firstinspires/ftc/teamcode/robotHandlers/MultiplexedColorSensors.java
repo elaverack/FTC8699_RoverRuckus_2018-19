@@ -41,7 +41,7 @@ public class MultiplexedColorSensors {
     private I2cDeviceSynch adaReader;
     private int lastPort;
 
-    public static enum ATIME {SLOWEST, SLOW, MED, FAST, FASTEST}
+    public enum ATIME {SLOWEST, SLOW, MED, FAST, FASTEST}
     private static final int ATIME_SLOWEST = 0x00;
     private static final int ATIME_SLOW = 0xC0;
     private static final int ATIME_MED = 0xD5;
@@ -280,6 +280,62 @@ public class MultiplexedColorSensors {
             lastPort = port;        // not on consecutive reads of the same sensor
         }
         adaReader.engage();
+    }
+
+    public static int calcColorTemp (int r, int g, int b) {
+        // Ref: https://en.wikipedia.org/wiki/Color_temperature
+        //      https://en.wikipedia.org/wiki/CIE_1931_color_space
+
+        if (r + g + b == 0) return 999;    // Prevent divide by zero
+
+        // Convert from RGB to CIE XYZ color space
+        double  x   = (-0.14282 * r) + (1.54924 * g) + (-0.95641 * b);
+        double  y   = (-0.32466 * r) + (1.57837 * g) + (-0.73191 * b);
+        double  z   = (-0.68202 * r) + (0.77073 * g) + ( 0.56332 * b);
+        // Convert to chromatic X and Y coordinates
+        double  xyz = x + y + z;
+
+        double  xC  = x/xyz;
+        double  yC  = y/xyz;
+        // Convert to Correlated Color Temparature (CCT)
+        // Using McCamy's cubic approximation
+        // Based on the inverse slope n at epicenter
+        double  n   = (xC - 0.3320) / (0.1858 - yC);
+        double  CCT =  449.0 *n*n*n + 3525.0 *n*n + 6823.3 * n + 5520.33;
+        // This formula is not working properly with high
+        // green values, clamp the result to 1,000 - 29,999
+        if (CCT > 29999) CCT = 29999;
+        if (CCT < 1000) CCT = 1000;
+        return Math.round((float) CCT);
+    }
+
+    public static int calcColorTemp (int[] crgb) {
+        // Ref: https://en.wikipedia.org/wiki/Color_temperature
+        //      https://en.wikipedia.org/wiki/CIE_1931_color_space
+
+        double r = crgb[1]; double g = crgb[2]; double b = crgb[3];
+
+        if (r + g + b == 0) return 999;    // Prevent divide by zero
+
+        // Convert from RGB to CIE XYZ color space
+        double  x   = (-0.14282 * r) + (1.54924 * g) + (-0.95641 * b);
+        double  y   = (-0.32466 * r) + (1.57837 * g) + (-0.73191 * b);
+        double  z   = (-0.68202 * r) + (0.77073 * g) + ( 0.56332 * b);
+        // Convert to chromatic X and Y coordinates
+        double  xyz = x + y + z;
+
+        double  xC  = x/xyz;
+        double  yC  = y/xyz;
+        // Convert to Correlated Color Temparature (CCT)
+        // Using McCamy's cubic approximation
+        // Based on the inverse slope n at epicenter
+        double  n   = (xC - 0.3320) / (0.1858 - yC);
+        double  CCT =  449.0 *n*n*n + 3525.0 *n*n + 6823.3 * n + 5520.33;
+        // This formula is not working properly with high
+        // green values, clamp the result to 1,000 - 29,999
+        if (CCT > 29999) CCT = 29999;
+        if (CCT < 1000) CCT = 1000;
+        return Math.round((float) CCT);
     }
 
 }
