@@ -53,7 +53,7 @@ public class B2B0S1PM extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new AutonomousJorge(this);
+        jorge = new AutonomousJorge(this, false);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();

@@ -43,7 +43,7 @@ import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
 // Created on 4/24/2017 at 5:08 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.autonomous.red
 
 @Autonomous(name = "Template", group = "Linear Opmode")
-//@Disabled
+@Disabled
 public class Template extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();

@@ -206,11 +206,42 @@ public class AutonomousJorge extends Jorge {
     }
 
     public void shoot ( int noTimes ) {
-        if (!opMode.opModeIsActive() || noTimes < 1) return;
-        for ( int i = 0; i < noTimes; i++ ) {
-            doShooting(true);
-            while (shooting) { if (!opMode.opModeIsActive()) return; }
+        if (!opMode.opModeIsActive() || noTimes < 1 || noTimes > 2) return;
+        auxMotors.setMode(SHOOTER, DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        auxMotors.setMode(SHOOTER, DcMotor.RunMode.RUN_TO_POSITION);
+        int goalEncoder = 1680*noTimes;
+        boolean loadedSecond = false;
+        servos.setPosition(LOADER, LOAD);
+        auxMotors.setTargetPosition(SHOOTER, goalEncoder, .5);
+        while (/*auxMotors.getPosition(SHOOTER) > SHOOTER_FIRE || auxMotors.getPosition(SHOOTER) == SHOOTER_FIRE*/
+                !compareTarget(new int[]{auxMotors.getPosition(SHOOTER)}, new int[]{goalEncoder})) {
+            if (!opMode.opModeIsActive()) return;
+            if (noTimes > 1 && auxMotors.getPosition(SHOOTER) > goalEncoder/2 && !loadedSecond) {
+                auxMotors.setPower(SHOOTER, 0);
+                servos.setPosition(LOADER, UNLOAD);
+                ElapsedTime runtime = new ElapsedTime();
+                while (runtime.milliseconds() < 500) { if (!opMode.opModeIsActive()) return; }
+                auxMotors.setPower(SHOOTER, .5);
+                opMode.telemetry.addData("Status", "Restarted motor..."); opMode.telemetry.update();
+                loadedSecond = true;
+            }
         }
+        auxMotors.setPower(SHOOTER, 0);
+        auxMotors.setTargetPosition(SHOOTER, 0, 0);
+        auxMotors.setMode(SHOOTER, DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        auxMotors.setMode(SHOOTER, DcMotor.RunMode.RUN_TO_POSITION);
+        servos.setPosition(LOADER, LOAD);
+    }
+
+    private static boolean compareTarget ( int[] current, int[] target ) {
+        if (current.length != target.length) return false;
+        boolean Return = true;
+        for ( int i = 0; i < current.length; i++ ) {
+            if (current[i] > target[i]+10 || current[i] < target[i]-10) {
+                Return = false; break;
+            }
+        }
+        return Return;
     }
 
 }

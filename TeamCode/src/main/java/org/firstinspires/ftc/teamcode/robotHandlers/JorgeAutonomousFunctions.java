@@ -121,7 +121,7 @@ public class JorgeAutonomousFunctions {
         // Telemetry so I know what's going on
         updateStatus(jorge, "Doing step 3 -- Perfect rotation.");
 
-        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_L, Jorge.BEACON_UP );
         jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_UP );
         jorge.drive.setAllModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -172,7 +172,7 @@ public class JorgeAutonomousFunctions {
         // Telemetry so I know what's going on
         updateStatus(jorge, "Doing step 3 -- Perfect rotation.");
 
-        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_L, Jorge.BEACON_UP );
         jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_UP );
         jorge.drive.setAllModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -248,7 +248,7 @@ public class JorgeAutonomousFunctions {
         jorge.opMode.telemetry.addData("Status", "Doing step 6 -- Pressing/rotating");
         jorge.opMode.telemetry.update();
 
-        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_DOWN );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_L, Jorge.BEACON_DOWN );
 
         if (direction > 0) {
             jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{0, 0, ROTATE_POWER, ROTATE_POWER} );
@@ -302,7 +302,7 @@ public class JorgeAutonomousFunctions {
         }
 
         jorge.drive.stopAll();
-        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_L, Jorge.BEACON_UP );
 
     }
     public static void RED_PRESS_BEACON(AutonomousJorge jorge, TurnToAngleTest.Direction presser) {
@@ -399,7 +399,7 @@ public class JorgeAutonomousFunctions {
 //        }
 
         jorge.drive.stopAll();
-        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_L, Jorge.BEACON_UP );
         jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_UP );
 
     }
@@ -497,7 +497,7 @@ public class JorgeAutonomousFunctions {
 //        }
 
         jorge.drive.stopAll();
-        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_L, Jorge.BEACON_UP );
         jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_UP );
 
     }
@@ -553,13 +553,27 @@ public class JorgeAutonomousFunctions {
 //        PRESS_BEACON( jorge, noTimes );
 
         if (side == SIDE.RED) {
-            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_RED ) { return; } else
-            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_RED ) {RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.RIGHT);}
-            else { RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.LEFT); }
+            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_RED ||
+                    jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_BLUE )
+            { RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.LEFT); } else
+            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_RED )
+            {RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.RIGHT);}
+            else { RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.RIGHT); }
+            jorge.vuforia.checkOnBeacons(facingBeacon.index);
+            if (jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_BLUE) {
+                RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.LEFT);
+            }
         } else {
-            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_BLUE ) { return; } else
-            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_BLUE ) {RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.RIGHT);}
-            else { RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.LEFT); }
+            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_RED ||
+                    jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_RED)
+            { BLUE_PRESS_BEACON(jorge, TurnToAngleTest.Direction.LEFT); } else
+            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_BLUE )
+            {BLUE_PRESS_BEACON(jorge, TurnToAngleTest.Direction.RIGHT);}
+            else { BLUE_PRESS_BEACON(jorge, TurnToAngleTest.Direction.RIGHT); }
+            jorge.vuforia.checkOnBeacons(facingBeacon.index);
+            if (jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_RED) {
+                RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.LEFT);
+            }
         }
 
         //jorge.vuforia.checkOnBeacons(facingBeacon.index);

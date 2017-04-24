@@ -36,7 +36,7 @@ public class Jorge extends RobotHandler {
     public static final String
             SHOOTER = "shoot",
             PICKUP = "pickup",
-            BEACON_PRESSER = "beacon",
+            BEACON_PRESSER = "beaconl",
             LOADER = "load";
 
     protected Jorge(){}

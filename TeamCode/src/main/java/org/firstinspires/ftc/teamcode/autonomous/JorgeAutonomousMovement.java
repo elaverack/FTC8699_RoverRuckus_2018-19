@@ -83,21 +83,21 @@ public final class JorgeAutonomousMovement {
     // BLUE2, POSITION 2, SHOOTING POSITION
     public static final float
             BLUE2_SHOOT_D1 = -5.27f,
-            BLUE2_SHOOT_D2 = -16.45f;
+            BLUE2_SHOOT_D2 = -14.45f;
     public static final int
             BLUE2_SHOOT_A1 = 43;
 
     // BLUE2, SHOOTING POSITION, CENTER
 
     public static final float
-            BLUE2_CENTER_D1 = -43.4f;
+            BLUE2_CENTER_D1 = -45.4f;
 
-    // BLUE2, SHOOTING POSITION, CENTER
+    // BLUE2, SHOOTING POSITION, CORNER
 
     public static final float
-            BLUE2_CORNER_D1 = -68f;
+            BLUE2_CORNER_D1 = -67f;
     public static final int
-            BLUE2_CORNER_A1 = 48;
+            BLUE2_CORNER_A1 = 50;
 
 
     // RED
@@ -208,9 +208,9 @@ public final class JorgeAutonomousMovement {
 
     public static void BLUE2_TO_CORNER ( AutonomousJorge jorge ) {
 
-        turnToAngle( jorge, RED2_CORNER_A1 );
+        turnToAngle( jorge, BLUE2_CORNER_A1 );
 
-        driveIn( jorge, RED2_CORNER_D1 );
+        driveIn( jorge, BLUE2_CORNER_D1 );
 
     }
 
