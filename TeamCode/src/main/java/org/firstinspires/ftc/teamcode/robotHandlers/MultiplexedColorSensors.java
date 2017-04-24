@@ -39,7 +39,7 @@ public class MultiplexedColorSensors {
     private byte[] adaCache;
     private I2cDevice ada;
     private I2cDeviceSynch adaReader;
-    private int lastPort;
+    private int lastPort = Integer.MAX_VALUE;
 
     public enum ATIME {SLOWEST, SLOW, MED, FAST, FASTEST}
     private static final int ATIME_SLOWEST = 0x00;

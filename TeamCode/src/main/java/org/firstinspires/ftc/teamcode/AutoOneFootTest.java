@@ -34,59 +34,34 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robots.Jorge;
+import org.firstinspires.ftc.teamcode.robotHandlers.JorgeAutonomousFunctions;
+import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
 
-// Created on 4/11/2017 at 11:43 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/23/2017 at 7:41 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "TestEncodedDistance", group = "Linear Opmode")
+@Autonomous(name = "AutoOneFootTest", group = "Linear Opmode")
 //@Disabled
-public class TestEncodedDistance extends LinearOpMode {
+public class AutoOneFootTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private Jorge jorge;
-    private final float IN_PER_REV = 19.125f;
+    private AutonomousJorge jorge;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new Jorge(this);
+        jorge = new AutonomousJorge(this, false);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
 
-        goFeetWithEncoders(2, 1);
+        JorgeAutonomousFunctions.DRIVE_FORWARD_FEET(jorge, 1, .8);
 
-        //Done.
-        while (opModeIsActive()) {
-
-            //jorge.drive();
-
-            //int[] positions = jorge.drive.getAllPositions();
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            //int i = 1;
-            //for (int position : positions) {
-            //    telemetry.addData("" + i, "" + position); i++;
-            //}
-            telemetry.update();
-        }
-    }
-
-    private int calcEncodersForFeet (float feet) {
-        float distance = feet * 12;
-        return Math.round((distance / IN_PER_REV) * 1680);
-    }
-
-    private void goFeetWithEncoders (float feet, double speed) {
-        jorge.drive.setAllModes(DcMotor.RunMode.RUN_TO_POSITION);
-        jorge.drive.setAllTargetPositions(calcEncodersForFeet(feet), speed);
-
-        boolean Break = false;
-        while (!Break) {Break = (jorge.drive.updateAllMotors() || !opModeIsActive());}
-        jorge.stop();
+        while (opModeIsActive()) { telemetry.addData("Status", "Done. Run Time: " + runtime.toString()); telemetry.update(); }
     }
 }

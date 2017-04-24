@@ -30,63 +30,52 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.archive.season2016_2017.chandler_preparingForStates2017.chandler_CameraTesting;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robots.Jorge;
+// Created on 2/3/2017 at 10:00 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.archive.season2016_2017.chandler_preparingForStates2017.chandler_betaOpmodes
 
-// Created on 4/11/2017 at 11:43 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+@TeleOp(name = "BETA_Camera1", group = "Linear Opmode")
+// @Autonomous(...) is the other common choice
+@Disabled
+public class BETA_Camera1 extends LinearOpMode {
 
-@Autonomous(name = "TestEncodedDistance", group = "Linear Opmode")
-//@Disabled
-public class TestEncodedDistance extends LinearOpMode {
-
+    /* Declare OpMode members. */
     private ElapsedTime runtime = new ElapsedTime();
-    private Jorge jorge;
-    private final float IN_PER_REV = 19.125f;
 
     @Override
-    public void runOpMode() throws InterruptedException {
-
-        jorge = new Jorge(this);
-
+    public void runOpMode() {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+
+        /* eg: Initialize the hardware variables. Note that the strings used here as parameters
+         * to 'get' must correspond to the names assigned during the robot configuration
+         * step (using the FTC Robot Controller app on the phone).
+         */
+        // leftMotor  = hardwareMap.dcMotor.get("left_drive");
+        // rightMotor = hardwareMap.dcMotor.get("right_drive");
+
+        // eg: Set the drive motor directions:
+        // "Reverse" the motor that runs backwards when connected directly to the battery
+        // leftMotor.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
+        // rightMotor.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
+
+        // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
 
-        goFeetWithEncoders(2, 1);
-
-        //Done.
+        // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-
-            //jorge.drive();
-
-            //int[] positions = jorge.drive.getAllPositions();
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            //int i = 1;
-            //for (int position : positions) {
-            //    telemetry.addData("" + i, "" + position); i++;
-            //}
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.update();
+
+            // eg: Run wheels in tank mode (note: The joystick goes negative when pushed forwards)
+            // leftMotor.setPower(-gamepad1.left_stick_y);
+            // rightMotor.setPower(-gamepad1.right_stick_y);
         }
-    }
-
-    private int calcEncodersForFeet (float feet) {
-        float distance = feet * 12;
-        return Math.round((distance / IN_PER_REV) * 1680);
-    }
-
-    private void goFeetWithEncoders (float feet, double speed) {
-        jorge.drive.setAllModes(DcMotor.RunMode.RUN_TO_POSITION);
-        jorge.drive.setAllTargetPositions(calcEncodersForFeet(feet), speed);
-
-        boolean Break = false;
-        while (!Break) {Break = (jorge.drive.updateAllMotors() || !opModeIsActive());}
-        jorge.stop();
     }
 }

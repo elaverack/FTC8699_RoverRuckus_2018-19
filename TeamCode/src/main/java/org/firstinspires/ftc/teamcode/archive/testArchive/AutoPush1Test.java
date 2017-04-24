@@ -30,63 +30,79 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.archive.testArchive;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robots.Jorge;
+import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
-// Created on 4/11/2017 at 11:43 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 3/3/2017 at 8:44 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "TestEncodedDistance", group = "Linear Opmode")
-//@Disabled
-public class TestEncodedDistance extends LinearOpMode {
+@Autonomous(name = "OldAutoPush1Test", group = "Linear Opmode")
+@Disabled
+public class AutoPush1Test extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private Jorge jorge;
-    private final float IN_PER_REV = 19.125f;
+    private StandardRobotDrive drive;
+    private Servo beacon_presser;
+    private final double
+            POSITION_UP = 0,
+            POSITION_DOWN = 1;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new Jorge(this);
+        drive = new StandardRobotDrive(hardwareMap);
+        drive.setSideDirection(StandardRobotDrive.SIDE.LEFT, DcMotorSimple.Direction.FORWARD);
+        drive.setSideDirection(StandardRobotDrive.SIDE.RIGHT, DcMotorSimple.Direction.REVERSE);
+
+        beacon_presser = hardwareMap.servo.get("beacon");
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+        // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
 
-        goFeetWithEncoders(2, 1);
+        sleep(500);
+        press(1);
 
-        //Done.
+        // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-
-            //jorge.drive();
-
-            //int[] positions = jorge.drive.getAllPositions();
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            //int i = 1;
-            //for (int position : positions) {
-            //    telemetry.addData("" + i, "" + position); i++;
-            //}
+            telemetry.addData("Status", "Done pressing beacon.");
             telemetry.update();
         }
     }
 
-    private int calcEncodersForFeet (float feet) {
-        float distance = feet * 12;
-        return Math.round((distance / IN_PER_REV) * 1680);
-    }
-
-    private void goFeetWithEncoders (float feet, double speed) {
-        jorge.drive.setAllModes(DcMotor.RunMode.RUN_TO_POSITION);
-        jorge.drive.setAllTargetPositions(calcEncodersForFeet(feet), speed);
-
-        boolean Break = false;
-        while (!Break) {Break = (jorge.drive.updateAllMotors() || !opModeIsActive());}
-        jorge.stop();
+    private final double
+            BACK_UP_POWER = -.15,
+            PRESS_POWER = .1;
+    private final long
+            PRESS_TIME = 1500,
+            BACK_UP_TIME = 250,
+            INTERVAL_TIME = 100;
+    private void press(int times) throws InterruptedException {
+        for (int i = 0; i < times; i++) {
+            if (!opModeIsActive()) return;
+            drive.setAllPowers(BACK_UP_POWER);
+            sleep(BACK_UP_TIME);
+            drive.stopAll();
+            sleep(INTERVAL_TIME);
+            beacon_presser.setPosition(POSITION_DOWN);
+            drive.setAllPowers(PRESS_POWER);
+            sleep(PRESS_TIME);
+            drive.stopAll();
+            sleep(INTERVAL_TIME);
+            drive.setAllPowers(BACK_UP_POWER);
+            sleep(BACK_UP_TIME);
+            drive.stopAll();
+            sleep(INTERVAL_TIME);
+        }
+        beacon_presser.setPosition(POSITION_UP);
     }
 }

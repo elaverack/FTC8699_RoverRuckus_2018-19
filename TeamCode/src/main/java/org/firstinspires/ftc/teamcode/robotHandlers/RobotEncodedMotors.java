@@ -30,13 +30,22 @@ public class RobotEncodedMotors extends RobotMotors {
     }
     public void setTargetPositions (String[] motorNames, int position, double power) {
         for (String motorName:motorNames) {
-            setTargetPosition(motorName, position, power);
+            motors.get(motorName).setTargetPosition(position);
+        }
+        for (String motorName:motorNames) {
+            setPower(motorName, power);
         }
     }
     public void setTargetPositions (String[] motorNames, int[] positions, double[] powers) {
         if ((motorNames.length != positions.length || motorNames.length != powers.length)) return;
-        for (int i = 0; i < motorNames.length; i++) {
+        /*for (int i = 0; i < motorNames.length; i++) {
             setTargetPosition(motorNames[i], positions[i], powers[i]);
+        }*/
+        for (int i = 0; i < motorNames.length; i++) {
+            motors.get(motorNames[i]).setTargetPosition(positions[i]);
+        }
+        for (int i = 0; i < motorNames.length; i++) {
+            setPower(motorNames[i], powers[i]);
         }
     }
     public void setTargetPositions (String[] motorNames, int[] positions, double power) {

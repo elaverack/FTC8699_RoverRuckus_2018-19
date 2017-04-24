@@ -30,63 +30,42 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.archive.testArchive;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robots.Jorge;
+import org.firstinspires.ftc.teamcode.robotHandlers.JorgeAutonomousFunctions;
+import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
 
-// Created on 4/11/2017 at 11:43 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/21/2017 at 6:38 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "TestEncodedDistance", group = "Linear Opmode")
+@Autonomous(name = "AutoFullBeaconTest", group = "Linear Opmode")
 //@Disabled
-public class TestEncodedDistance extends LinearOpMode {
+public class NewAutoFullBeaconTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private Jorge jorge;
-    private final float IN_PER_REV = 19.125f;
+
+    private AutonomousJorge jorge;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new Jorge(this);
+        jorge = new AutonomousJorge(this);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
 
-        goFeetWithEncoders(2, 1);
+        JorgeAutonomousFunctions.GO_TO_WHITE_LINE( jorge );
 
-        //Done.
-        while (opModeIsActive()) {
+        JorgeAutonomousFunctions.STRAIGHTEN_ON_WHITE_LINE( jorge );
 
-            //jorge.drive();
+        JorgeAutonomousFunctions.FULL_PRESS_BEACON( jorge, AutonomousJorge.BEACON.B1 );
 
-            //int[] positions = jorge.drive.getAllPositions();
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            //int i = 1;
-            //for (int position : positions) {
-            //    telemetry.addData("" + i, "" + position); i++;
-            //}
-            telemetry.update();
-        }
-    }
-
-    private int calcEncodersForFeet (float feet) {
-        float distance = feet * 12;
-        return Math.round((distance / IN_PER_REV) * 1680);
-    }
-
-    private void goFeetWithEncoders (float feet, double speed) {
-        jorge.drive.setAllModes(DcMotor.RunMode.RUN_TO_POSITION);
-        jorge.drive.setAllTargetPositions(calcEncodersForFeet(feet), speed);
-
-        boolean Break = false;
-        while (!Break) {Break = (jorge.drive.updateAllMotors() || !opModeIsActive());}
-        jorge.stop();
+        // Done.
+        while (opModeIsActive()) { telemetry.addData("Status", "Done. Run Time: " + runtime.toString()); telemetry.update(); }
     }
 }

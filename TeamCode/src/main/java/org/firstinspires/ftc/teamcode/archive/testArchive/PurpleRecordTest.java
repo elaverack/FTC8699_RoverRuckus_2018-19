@@ -30,63 +30,47 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.archive.testArchive;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.robotHandlers.OptimizedGamepadRecorder;
 import org.firstinspires.ftc.teamcode.robots.Jorge;
 
-// Created on 4/11/2017 at 11:43 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/14/2017 at 4:13 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "TestEncodedDistance", group = "Linear Opmode")
-//@Disabled
-public class TestEncodedDistance extends LinearOpMode {
+@TeleOp(name = "PurpleRecordTest", group = "Iterative Opmode")
+@Disabled
+public class PurpleRecordTest extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Jorge jorge;
-    private final float IN_PER_REV = 19.125f;
+    private OptimizedGamepadRecorder recorder;
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void init() {
 
         jorge = new Jorge(this);
 
+        recorder = new OptimizedGamepadRecorder("first-purple-test.txt");
+
         telemetry.addData("Status", "Initialized");
-        telemetry.update();
-        waitForStart();
-        runtime.reset();
 
-        goFeetWithEncoders(2, 1);
-
-        //Done.
-        while (opModeIsActive()) {
-
-            //jorge.drive();
-
-            //int[] positions = jorge.drive.getAllPositions();
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            //int i = 1;
-            //for (int position : positions) {
-            //    telemetry.addData("" + i, "" + position); i++;
-            //}
-            telemetry.update();
-        }
     }
 
-    private int calcEncodersForFeet (float feet) {
-        float distance = feet * 12;
-        return Math.round((distance / IN_PER_REV) * 1680);
-    }
+    @Override
+    public void init_loop() {}
 
-    private void goFeetWithEncoders (float feet, double speed) {
-        jorge.drive.setAllModes(DcMotor.RunMode.RUN_TO_POSITION);
-        jorge.drive.setAllTargetPositions(calcEncodersForFeet(feet), speed);
+    @Override
+    public void start() { runtime.reset(); recorder.resetRuntime(); }
 
-        boolean Break = false;
-        while (!Break) {Break = (jorge.drive.updateAllMotors() || !opModeIsActive());}
-        jorge.stop();
-    }
+    @Override
+    public void loop() { jorge.recordedDrive(recorder); telemetry.addData("Status", "Running: " + runtime.toString()); }
+
+    @Override
+    public void stop() { jorge.stop(); recorder.closeFile(); }
+
 }

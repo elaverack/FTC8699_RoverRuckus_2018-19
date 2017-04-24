@@ -30,63 +30,66 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.archive.testArchive;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.robots.Jorge;
+import org.firstinspires.ftc.teamcode.robotHandlers.MultiplexedColorSensors;
+import org.firstinspires.ftc.teamcode.robotHandlers.StandardRobotDrive;
 
-// Created on 4/11/2017 at 11:43 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 3/2/2017 at 8:10 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "TestEncodedDistance", group = "Linear Opmode")
-//@Disabled
-public class TestEncodedDistance extends LinearOpMode {
+@Autonomous(name = "OldAutoLineTest", group = "Linear Opmode")
+@Disabled
+public class AutoLineTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private Jorge jorge;
-    private final float IN_PER_REV = 19.125f;
+    private StandardRobotDrive drive;
+    private MultiplexedColorSensors colorSensors;
+    private final int NUMBER_OF_SENSORS = 2;
+    private final int WHITE_MIN = 6275;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new Jorge(this);
+        drive = new StandardRobotDrive(hardwareMap);
+        drive.setSideDirection(StandardRobotDrive.SIDE.LEFT, DcMotorSimple.Direction.FORWARD);
+        drive.setSideDirection(StandardRobotDrive.SIDE.RIGHT, DcMotorSimple.Direction.REVERSE);
+
+        colorSensors = new MultiplexedColorSensors(this.hardwareMap, "mux", "ada", NUMBER_OF_SENSORS, MultiplexedColorSensors.ATIME.FASTEST, MultiplexedColorSensors.GAIN._16X);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+        // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
 
-        goFeetWithEncoders(2, 1);
+        goToWhiteLine(0);
 
-        //Done.
+        // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-
-            //jorge.drive();
-
-            //int[] positions = jorge.drive.getAllPositions();
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            //int i = 1;
-            //for (int position : positions) {
-            //    telemetry.addData("" + i, "" + position); i++;
-            //}
+            telemetry.addData("Status", "Done.");
+            telemetry.addData("c0", "" + colorSensors.colorTemp(0));
+            telemetry.addData("c1", "" + colorSensors.colorTemp(1));
+            telemetry.addData("c2", "" + colorSensors.colorTemp(2));
             telemetry.update();
         }
     }
 
-    private int calcEncodersForFeet (float feet) {
-        float distance = feet * 12;
-        return Math.round((distance / IN_PER_REV) * 1680);
-    }
-
-    private void goFeetWithEncoders (float feet, double speed) {
-        jorge.drive.setAllModes(DcMotor.RunMode.RUN_TO_POSITION);
-        jorge.drive.setAllTargetPositions(calcEncodersForFeet(feet), speed);
-
-        boolean Break = false;
-        while (!Break) {Break = (jorge.drive.updateAllMotors() || !opModeIsActive());}
-        jorge.stop();
+    private void goToWhiteLine (int port) {
+        drive.setAllPowers(.08);
+        while (colorSensors.colorTemp(port) < WHITE_MIN) {
+            if (!opModeIsActive()) break;
+            telemetry.addData("Status", "Looking for line...");
+            telemetry.addData("c0", "" + colorSensors.colorTemp(0));
+            telemetry.addData("c1", "" + colorSensors.colorTemp(1));
+            telemetry.addData("c2", "" + colorSensors.colorTemp(2));
+            telemetry.update();
+        }
+        drive.stopAll();
     }
 }

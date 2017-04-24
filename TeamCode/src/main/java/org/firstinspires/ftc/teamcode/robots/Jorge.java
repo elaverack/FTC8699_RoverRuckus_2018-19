@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.robotHandlers.EncodedRobotDrive;
+import org.firstinspires.ftc.teamcode.robotHandlers.OptimizedGamepadRecorder;
 import org.firstinspires.ftc.teamcode.robotHandlers.RobotConfig;
 import org.firstinspires.ftc.teamcode.robotHandlers.RobotEncodedMotors;
 import org.firstinspires.ftc.teamcode.robotHandlers.RobotHandler;
@@ -26,7 +27,7 @@ public class Jorge extends RobotHandler {
     protected static final int
             SHOOTER_FIRE = 1680;
     public static final double
-            RUN_PICK_UP     = 1,
+            RUN_PICK_UP     = -.8,
             STOP_PICK_UP    = 0,
             BEACON_DOWN     = .27,
             BEACON_UP       = .92,
@@ -91,6 +92,7 @@ public class Jorge extends RobotHandler {
         }
 
         drive.setPowers(new String[]{"rf", "rb", "lf", "lb"}, new double[]{powerRF, powerRB, powerLF, powerLB});
+        doBeaconPresser(opMode.gamepad1.a);
 
         Gamepad gamepad2 = opMode.gamepad2;
         doPickUp(gamepad2.b);
@@ -100,6 +102,44 @@ public class Jorge extends RobotHandler {
         opMode.telemetry.addData("CAM", auxMotors.getPosition(SHOOTER));
         opMode.telemetry.addData("CHECK", (auxMotors.getPosition(SHOOTER) > SHOOTER_FIRE || auxMotors.getPosition(SHOOTER) == SHOOTER_FIRE));
         opMode.telemetry.addData("SHOOTING N SET", shooting + ", " + set);
+
+    }
+
+    public void recordedDrive (OptimizedGamepadRecorder recorder) {
+
+        float straight = -opMode.gamepad1.right_stick_y;
+        float strafe = opMode.gamepad1.right_stick_x;
+        float rotate = opMode.gamepad1.left_stick_x;
+        float slow = opMode.gamepad1.right_trigger;
+
+        recorder.doRecord(straight, rotate, strafe, slow);
+
+        float powerRF = straight;
+        float powerRB = straight;
+        float powerLF = straight;
+        float powerLB = straight;
+        powerRF -= strafe;
+        powerRB += strafe;
+        powerLF += strafe;
+        powerLB -= strafe;
+        powerRF -= rotate;
+        powerRB -= rotate;
+        powerLF += rotate;
+        powerLB += rotate;
+
+        if (powerRF > 1) {powerRF = 1;} else if (powerRF < -1) {powerRF = -1;}
+        if (powerRB > 1) {powerRB = 1;} else if (powerRB < -1) {powerRB = -1;}
+        if (powerLF > 1) {powerLF = 1;} else if (powerLF < -1) {powerLF = -1;}
+        if (powerLB > 1) {powerLB = 1;} else if (powerLB < -1) {powerLB = -1;}
+
+        if (slow > 0.25) {
+            powerRF /= 4 * slow;
+            powerRB /= 4 * slow;
+            powerLF /= 4 * slow;
+            powerLB /= 4 * slow;
+        }
+
+        drive.setPowers(new String[]{"rf", "rb", "lf", "lb"}, new double[]{powerRF, powerRB, powerLF, powerLB});
 
     }
 
@@ -117,6 +157,7 @@ public class Jorge extends RobotHandler {
             if (!set) {
                 //shooter.setTargetPosition(SHOOTER_FIRE);
                 //shooter.setPower(.2);
+                servos.setPosition(LOADER, LOAD);
                 auxMotors.setTargetPosition(SHOOTER, SHOOTER_FIRE, .5);
                 set = true;
             }
@@ -133,9 +174,6 @@ public class Jorge extends RobotHandler {
                 shooting = false;
                 set = false;
                 servos.setPosition(LOADER, UNLOAD);
-            }
-            if ((auxMotors.getPosition(SHOOTER) > (SHOOTER_FIRE/2) || auxMotors.getPosition(SHOOTER) == (SHOOTER_FIRE/2)) && set) {
-                servos.setPosition(LOADER, LOAD);
             }
         }
 
