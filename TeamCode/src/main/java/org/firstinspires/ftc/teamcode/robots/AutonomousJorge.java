@@ -35,9 +35,16 @@ public class AutonomousJorge extends Jorge {
     public MultiplexedColorSensors colorSensors;
     public LinearOpMode opMode;
     public Vuforia2017Manager vuforia;
+    public static final String
+            BEACON_PRESSER_L        = "beaconl",
+            BEACON_PRESSER_R        = "beaconr";
 
     private final int
-            NUMBER_OF_SENSORS   = 2;
+            NUMBER_OF_SENSORS       = 2;
+
+    public static final double
+            BEACON_PRESSER_R_UP     = 0,
+            BEACON_PRESSER_R_DOWN   = 1;
 
     public enum COLOR_SENSOR {
         MIDDLE(0), BACK(1);
@@ -55,36 +62,9 @@ public class AutonomousJorge extends Jorge {
         BEACON (int index) {this.index = index;}
     }
 
-    public AutonomousJorge(LinearOpMode om) {
-        this.opMode = om;
-        this.config = new RobotConfig(4, RobotConfig.driveType.MECANUM, 2, 3);
-        drive = new EncodedRobotDrive(opMode.hardwareMap);
-        drive.setSideDirections(
-                new StandardRobotDrive.SIDE[]{StandardRobotDrive.SIDE.RIGHT, StandardRobotDrive.SIDE.LEFT},
-                new DcMotorSimple.Direction[]{DcMotorSimple.Direction.REVERSE, DcMotorSimple.Direction.FORWARD}
-        );
-        auxMotors = new RobotEncodedMotors(opMode.hardwareMap, new String[]{SHOOTER, PICKUP});
-        servos = new RobotServos(opMode.hardwareMap, new String[]{BEACON_PRESSER, LOADER});
+    public AutonomousJorge(LinearOpMode om) { init(om, true); }
 
-        colorSensors = new MultiplexedColorSensors(opMode.hardwareMap, "mux", "ada", NUMBER_OF_SENSORS, MultiplexedColorSensors.ATIME.FASTEST, MultiplexedColorSensors.GAIN._16X);
-        vuforia = new Vuforia2017Manager();
-        drive.setAllModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-    }
-
-    public AutonomousJorge(LinearOpMode om, boolean doVuforia) {
-        this.opMode = om;
-        this.config = new RobotConfig(4, RobotConfig.driveType.MECANUM, 2, 3);
-        drive = new EncodedRobotDrive(opMode.hardwareMap);
-        drive.setSideDirections(
-                new StandardRobotDrive.SIDE[]{StandardRobotDrive.SIDE.RIGHT, StandardRobotDrive.SIDE.LEFT},
-                new DcMotorSimple.Direction[]{DcMotorSimple.Direction.REVERSE, DcMotorSimple.Direction.FORWARD}
-        );
-        auxMotors = new RobotEncodedMotors(opMode.hardwareMap, new String[]{SHOOTER, PICKUP});
-        servos = new RobotServos(opMode.hardwareMap, new String[]{BEACON_PRESSER, LOADER});
-
-        colorSensors = new MultiplexedColorSensors(opMode.hardwareMap, "mux", "ada", NUMBER_OF_SENSORS, MultiplexedColorSensors.ATIME.FASTEST, MultiplexedColorSensors.GAIN._16X);
-        vuforia = doVuforia ? new Vuforia2017Manager() : null;
-    }
+    public AutonomousJorge(LinearOpMode om, boolean doVuforia) { init(om, doVuforia); }
 
     public void playRecordingRed (String fileName ) throws Error {
 
@@ -208,6 +188,29 @@ public class AutonomousJorge extends Jorge {
 
         return new double[]{TIME, LF, LB, RF, RB};
 
+    }
+
+    private void init(LinearOpMode om, boolean doVuforia) {
+        this.opMode = om;
+        this.config = new RobotConfig(4, RobotConfig.driveType.MECANUM, 2, 3);
+        drive = new EncodedRobotDrive(opMode.hardwareMap);
+        drive.setSideDirections(
+                new StandardRobotDrive.SIDE[]{StandardRobotDrive.SIDE.RIGHT, StandardRobotDrive.SIDE.LEFT},
+                new DcMotorSimple.Direction[]{DcMotorSimple.Direction.REVERSE, DcMotorSimple.Direction.FORWARD}
+        );
+        auxMotors = new RobotEncodedMotors(opMode.hardwareMap, new String[]{SHOOTER, PICKUP});
+        servos = new RobotServos(opMode.hardwareMap, new String[]{BEACON_PRESSER_L, BEACON_PRESSER_R, LOADER});
+
+        colorSensors = new MultiplexedColorSensors(opMode.hardwareMap, "mux", "ada", NUMBER_OF_SENSORS, MultiplexedColorSensors.ATIME.FASTEST, MultiplexedColorSensors.GAIN._16X);
+        vuforia = doVuforia ? new Vuforia2017Manager() : null;
+    }
+
+    public void shoot ( int noTimes ) {
+        if (!opMode.opModeIsActive() || noTimes < 1) return;
+        for ( int i = 0; i < noTimes; i++ ) {
+            doShooting(true);
+            while (shooting) { if (!opMode.opModeIsActive()) return; }
+        }
     }
 
 }

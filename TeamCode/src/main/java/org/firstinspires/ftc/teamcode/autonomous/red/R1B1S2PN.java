@@ -30,58 +30,47 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.autonomous.red;
 
-import android.graphics.Path;
-
-import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.autonomous.JorgeAutonomousMovement;
 import org.firstinspires.ftc.teamcode.robotHandlers.JorgeAutonomousFunctions;
 import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
 
-// Created on 4/23/2017 at 7:54 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/24/2017 at 5:30 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.autonomous.red
 
-@Autonomous(name = "AutoMoveCWToPointTest2", group = "Linear Opmode")
+@Autonomous(name = "R1B1S2PN", group = "Linear Opmode")
 //@Disabled
-public class AutoMoveCWToPointTest2 extends LinearOpMode {
+public class R1B1S2PN extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
 
     private AutonomousJorge jorge;
 
-    private ModernRoboticsI2cGyro gyro;
-
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new AutonomousJorge(this, false);
-
-        gyro = (ModernRoboticsI2cGyro) hardwareMap.gyroSensor.get("gyro");
-        gyro.calibrate();
-
-        while (gyro.isCalibrating()) {
-            telemetry.addData("Status", "Gyro is calibrating, don't move!"); telemetry.update();
-        }
+        jorge = new AutonomousJorge(this);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
 
-        JorgeAutonomousFunctions.DRIVE_FORWARD_FEET(jorge, 1, .8);
+        JorgeAutonomousMovement.RED1_TO_BEACON(jorge);
+        JorgeAutonomousFunctions.RED_FULL_BEACON(jorge);
 
-        JorgeAutonomousFunctions.TURN_TO_RELATIVE_ANGLE(jorge, 65, Path.Direction.CW);
-
-        JorgeAutonomousFunctions.DRIVE_FORWARD_IN(jorge, 34.25f, .8);
+        JorgeAutonomousMovement.RED1_TO_SHOOTING_POSITION(jorge);
+        JorgeAutonomousFunctions.SHOOT_2(jorge);
 
         while (opModeIsActive()) {
-            telemetry.addData("Status", "Done. Gryo: " + gyro.getHeading());
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.update();
-
-
         }
     }
 }

@@ -30,7 +30,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.toBeArchived;
 
 import android.graphics.Path;
 
@@ -38,18 +38,16 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.robotHandlers.JorgeAutonomousFunctions;
 import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
-import org.firstinspires.ftc.teamcode.robots.Jorge;
 
-// Created on 4/23/2017 at 2:53 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/23/2017 at 7:54 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "AutoMoveAnd1BeaconTest", group = "Linear Opmode")
+@Autonomous(name = "AutoMoveToPointTest", group = "Linear Opmode")
 //@Disabled
-public class AutoMoveAnd1BeaconTest extends LinearOpMode {
+public class AutoMoveToPointTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -58,29 +56,20 @@ public class AutoMoveAnd1BeaconTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new AutonomousJorge(this);
+        jorge = new AutonomousJorge(this, false);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
 
-        // DRIVE TO BEACON 1
-        JorgeAutonomousFunctions.DRIVE_FORWARD_IN(jorge, 10.12f, .8);
+        JorgeAutonomousFunctions.TURN_TO_RELATIVE_ANGLE(jorge, 90, Path.Direction.CCW);
 
-        JorgeAutonomousFunctions.TURN_TO_RELATIVE_ANGLE(jorge, 40, Path.Direction.CCW);
+        while (opModeIsActive()) {
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.update();
 
-        JorgeAutonomousFunctions.DRIVE_FORWARD_IN(jorge, 53.67f, .8);
 
-        //JorgeAutonomousFunctions.TURN_TO_RELATIVE_ANGLE(jorge, 3, Path.Direction.CW);
-        // END
-
-        JorgeAutonomousFunctions.GO_TO_WHITE_LINE(jorge);
-
-        JorgeAutonomousFunctions.STRAIGHTEN_ON_WHITE_LINE(jorge);
-
-        JorgeAutonomousFunctions.FULL_PRESS_BEACON(jorge, AutonomousJorge.BEACON.B1);
-
-        while (opModeIsActive()) { telemetry.addData("Status", "Run Time: " + runtime.toString()); telemetry.update(); }
+        }
     }
 }

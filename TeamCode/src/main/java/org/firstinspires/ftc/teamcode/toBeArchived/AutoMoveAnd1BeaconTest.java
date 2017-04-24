@@ -30,11 +30,10 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.toBeArchived;
 
 import android.graphics.Path;
 
-import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -44,27 +43,18 @@ import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
 
 // Created on 4/23/2017 at 2:53 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "AutoMoveAnd2BeaconTest", group = "Linear Opmode")
+@Autonomous(name = "AutoMoveAnd1BeaconTest", group = "Linear Opmode")
 //@Disabled
-public class AutoMoveAnd2BeaconTest extends LinearOpMode {
+public class AutoMoveAnd1BeaconTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
 
     private AutonomousJorge jorge;
 
-    private ModernRoboticsI2cGyro gyro;
-
     @Override
     public void runOpMode() throws InterruptedException {
 
         jorge = new AutonomousJorge(this);
-
-        gyro = (ModernRoboticsI2cGyro) hardwareMap.gyroSensor.get("gyro");
-        gyro.calibrate();
-
-        while (gyro.isCalibrating()) {
-            telemetry.addData("Status", "Gyro is calibrating, don't move!"); telemetry.update();
-        }
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -83,24 +73,9 @@ public class AutoMoveAnd2BeaconTest extends LinearOpMode {
 
         JorgeAutonomousFunctions.GO_TO_WHITE_LINE(jorge);
 
-        JorgeAutonomousFunctions.STRAIGHTEN_ON_WHITE_LINE(jorge);
+        JorgeAutonomousFunctions.RED_STRAIGHTEN_ON_WHITE_LINE(jorge);
 
         JorgeAutonomousFunctions.FULL_PRESS_BEACON(jorge, AutonomousJorge.BEACON.B1);
-
-
-        // DRIVE TO BEACON 2
-        JorgeAutonomousFunctions.TURN_TO_GYRO_ANGLE(jorge, 356, gyro);
-
-        JorgeAutonomousFunctions.DRIVE_FORWARD_IN(jorge, 44.47f, .8);
-
-        JorgeAutonomousFunctions.TURN_TO_RELATIVE_ANGLE(jorge, 24, Path.Direction.CCW);
-        // END
-
-        JorgeAutonomousFunctions.GO_TO_WHITE_LINE(jorge);
-
-        JorgeAutonomousFunctions.STRAIGHTEN_ON_WHITE_LINE(jorge);
-
-        JorgeAutonomousFunctions.FULL_PRESS_BEACON(jorge, AutonomousJorge.BEACON.B2);
 
         while (opModeIsActive()) { telemetry.addData("Status", "Run Time: " + runtime.toString()); telemetry.update(); }
     }

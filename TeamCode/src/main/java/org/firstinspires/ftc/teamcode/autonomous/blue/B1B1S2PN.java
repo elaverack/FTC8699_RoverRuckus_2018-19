@@ -30,44 +30,44 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode.archive.testArchive;
+package org.firstinspires.ftc.teamcode.autonomous.blue;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.autonomous.JorgeAutonomousMovement;
 import org.firstinspires.ftc.teamcode.robotHandlers.JorgeAutonomousFunctions;
 import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
 
-// Created on 4/19/2017 at 5:49 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/24/2017 at 5:30 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.autonomous.red
 
-@Autonomous(name = "AutoLineTest", group = "Linear Opmode")
+@Autonomous(name = "B1B1S2PN", group = "Linear Opmode")
 //@Disabled
-public class NewAutoStraightenLineTest extends LinearOpMode {
+public class B1B1S2PN extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
+
     private AutonomousJorge jorge;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new AutonomousJorge(this, false);
+        jorge = new AutonomousJorge(this);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
 
-        JorgeAutonomousFunctions.GO_TO_WHITE_LINE(jorge);
+        JorgeAutonomousMovement.BLUE1_TO_BEACON(jorge);
+        JorgeAutonomousFunctions.BLUE_FULL_BEACON(jorge);
 
-        JorgeAutonomousFunctions.RED_STRAIGHTEN_ON_WHITE_LINE(jorge);
+        JorgeAutonomousMovement.BLUE1_TO_SHOOTING_POSITION(jorge);
+        JorgeAutonomousFunctions.SHOOT_2(jorge);
 
-        //Done.
         while (opModeIsActive()) {
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            jorge.opMode.telemetry.addData("c0", "" + jorge.colorSensors.colorTemp(0));
-            jorge.opMode.telemetry.addData("c1", "" + jorge.colorSensors.colorTemp(1));
-            jorge.opMode.telemetry.addData("c2", "" + jorge.colorSensors.colorTemp(2));
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.update();
         }
     }

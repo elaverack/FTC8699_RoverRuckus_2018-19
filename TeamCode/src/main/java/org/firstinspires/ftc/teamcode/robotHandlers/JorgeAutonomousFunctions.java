@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.robotHandlers;
 
+import android.graphics.Color;
 import android.graphics.Path;
 
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.archive.testArchive.TurnToAngleTest;
 import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
 import org.firstinspires.ftc.teamcode.robots.Jorge;
 
@@ -53,6 +55,10 @@ public class JorgeAutonomousFunctions {
     }
 
     public enum LINE_POSITION { LINE, EDGE, GREY }
+
+    public enum SIDE {
+        BLUE, RED
+    }
 
     @Deprecated public static void GO_TO_WHITE_LINE (AutonomousJorge jorge, AutonomousJorge.COLOR_SENSOR sensor) {
         jorge.drive.setAllPowers(.08);
@@ -102,7 +108,7 @@ public class JorgeAutonomousFunctions {
     }
 
     @Deprecated public static void STRAIGHTEN_ON_WHITE_LINE (AutonomousJorge jorge, AutonomousJorge.COLOR_SENSOR primarySensor, AutonomousJorge.COLOR_SENSOR auxSensor) { if (!jorge.opMode.opModeIsActive() || primarySensor == auxSensor) return; jorge.drive.stopAll(); }
-    public static void STRAIGHTEN_ON_WHITE_LINE (AutonomousJorge jorge) {
+    public static void RED_STRAIGHTEN_ON_WHITE_LINE(AutonomousJorge jorge) {
         if (!jorge.opMode.opModeIsActive()) return;
 
         // Verify not on line already
@@ -115,6 +121,8 @@ public class JorgeAutonomousFunctions {
         // Telemetry so I know what's going on
         updateStatus(jorge, "Doing step 3 -- Perfect rotation.");
 
+        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_UP );
         jorge.drive.setAllModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
         jorge.drive.setSidePowers( // Set side powers
@@ -151,8 +159,59 @@ public class JorgeAutonomousFunctions {
 
         }*/
     }
+    public static void BLUE_STRAIGHTEN_ON_WHITE_LINE(AutonomousJorge jorge) {
+        if (!jorge.opMode.opModeIsActive()) return;
 
-    public static void PRESS_BEACON (AutonomousJorge jorge, int noTimes) {
+        // Verify not on line already
+        if ( isSensorOnLine( jorge, AutonomousJorge.COLOR_SENSOR.MIDDLE ) ||
+                isSensorOnLine( jorge, AutonomousJorge.COLOR_SENSOR.BACK ) ) GO_TO_WHITE_LINE(jorge);
+
+
+        // STEP 3
+
+        // Telemetry so I know what's going on
+        updateStatus(jorge, "Doing step 3 -- Perfect rotation.");
+
+        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_UP );
+        jorge.drive.setAllModes(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        jorge.drive.setSidePowers( // Set side powers
+                new StandardRobotDrive.SIDE[]{StandardRobotDrive.SIDE.LEFT, StandardRobotDrive.SIDE.RIGHT},
+                new double[]{                        .125,                          -.125});
+
+        boolean middleSensorCrossedLine = false; // Variable to check whether the middle sensor crosses the line while turning
+
+        while ( !isSensorOnLine( jorge, AutonomousJorge.COLOR_SENSOR.BACK ) ) { // Rotate until the back sensor is on the line
+            if (!jorge.opMode.opModeIsActive()) return;
+            if ( isSensorOnLine( jorge, AutonomousJorge.COLOR_SENSOR.MIDDLE ) ) middleSensorCrossedLine = true;
+        }
+        jorge.drive.stopAll();
+
+
+        // STEP 4
+
+        // Telemetry so I know what's going on
+        updateStatus(jorge, "Doing step 4 -- Front rotation.");
+
+        int rotationDirection = middleSensorCrossedLine ? 1 : -1;
+
+        direction = rotationDirection;
+
+        jorge.drive.setPowers( new String[]{ "lf", "rf" }, new double[]{ .2*(rotationDirection), -.2*(rotationDirection) } ); // Set front motor powers
+
+        // Rotate until the middle sensor is on the line
+        while ( !isSensorOnLine( jorge, AutonomousJorge.COLOR_SENSOR.MIDDLE ) ) { if (!jorge.opMode.opModeIsActive()) return; }
+        jorge.drive.stopAll();
+
+        /*if (rotationDirection == -1) {
+
+            jorge.drive.setPowers( new String[]{ "rf", "rb" }, .2 );
+
+        }*/
+    }
+
+    @Deprecated public static void PRESS_BEACON (AutonomousJorge jorge, int noTimes) {
 
         if (!jorge.opMode.opModeIsActive() || noTimes < 1) return;
 
@@ -246,10 +305,206 @@ public class JorgeAutonomousFunctions {
         jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
 
     }
+    public static void RED_PRESS_BEACON(AutonomousJorge jorge, TurnToAngleTest.Direction presser) {
 
-    public static void FULL_PRESS_BEACON (AutonomousJorge jorge, AutonomousJorge.BEACON facingBeacon) throws InterruptedException, Error {
+        if (!jorge.opMode.opModeIsActive()) return;
 
-        /*PRESS_BEACON (jorge, 1);
+        final double
+                BACK_UP_POWER = -.1,
+                PRESS_POWER = .1,
+                ROTATE_POWER = .175;
+        final long
+                PRESS_TIME = 1500,
+                BACK_UP_TIME = 400,
+                INTERVAL_TIME = 100;
+
+
+        // STEP 5
+        jorge.opMode.telemetry.addData("Status", "Doing step 5 -- Backup for middle sensor");
+        jorge.opMode.telemetry.update();
+
+        jorge.drive.setAllModes(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        if (direction > 0) {
+            jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{ (-ROTATE_POWER)-.075, 0, 0, (-ROTATE_POWER)-.075 } );
+        } else {
+            jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{0, (-ROTATE_POWER)-.075, (-ROTATE_POWER)-.075, 0} );
+        }
+        //jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{0, (-ROTATE_POWER)-.075, (-ROTATE_POWER)-.075, 0} );
+        while ( !isSensorOnMiddle( jorge, AutonomousJorge.COLOR_SENSOR.MIDDLE ) ) {
+            if ( !jorge.opMode.opModeIsActive() ) return;
+        }
+
+
+        // STEP 6
+        ElapsedTime runtime = new ElapsedTime();
+        ElapsedTime runtime2 = new ElapsedTime();
+        jorge.opMode.telemetry.addData("Status", "Doing step 6 -- Pressing/rotating");
+        jorge.opMode.telemetry.update();
+
+        if ( presser == TurnToAngleTest.Direction.LEFT ) {
+            jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_L, Jorge.BEACON_DOWN );
+        } else {
+            jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_DOWN );
+        }
+
+        if (direction > 0) {
+            jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{0, 0, ROTATE_POWER, ROTATE_POWER} );
+        } else {
+            jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{ROTATE_POWER, ROTATE_POWER, 0, 0} );
+        }
+
+        //jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{ROTATE_POWER, ROTATE_POWER, 0, 0} );
+        boolean forwarding = false;
+        runtime.reset();
+        while ( runtime.milliseconds() < PRESS_TIME ) {
+            if ( !jorge.opMode.opModeIsActive() ) return;
+            if ( !forwarding && isSensorOnMiddle( jorge, AutonomousJorge.COLOR_SENSOR.BACK ) ) {
+                jorge.drive.setAllPowers(PRESS_POWER); forwarding = true;
+            }
+        }
+        runtime2.reset();
+        jorge.drive.stopAll();
+
+
+        // STEP 7
+        updateStatus( jorge, "Doing step 7 -- Backing up" );
+        runtime.reset();
+        while ( runtime.milliseconds() < INTERVAL_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+        jorge.drive.setAllPowers(-.2);
+        runtime.reset();
+        while ( runtime.milliseconds() < BACK_UP_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+        jorge.drive.stopAll();
+
+
+//        updateStatus( jorge, "Doing step 8 -- Pressing multiple times if needed" );
+//        noTimes--;
+//        for ( int i = 0; i < noTimes; i++ ) {
+//
+//            while ( runtime2.milliseconds() < 6500 ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+//
+//            jorge.drive.setAllPowers(PRESS_POWER);
+//            runtime.reset();
+//            while ( runtime.milliseconds() < PRESS_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+//            runtime2.reset();
+//            jorge.drive.stopAll();
+//
+//            runtime.reset();
+//            while ( runtime.milliseconds() < INTERVAL_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+//
+//            jorge.drive.setAllPowers(BACK_UP_POWER - .05);
+//            runtime.reset();
+//            while ( runtime.milliseconds() < BACK_UP_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+//            jorge.drive.stopAll();
+//        }
+
+        jorge.drive.stopAll();
+        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_UP );
+
+    }
+    public static void BLUE_PRESS_BEACON(AutonomousJorge jorge, TurnToAngleTest.Direction presser) {
+
+        if (!jorge.opMode.opModeIsActive()) return;
+
+        final double
+                BACK_UP_POWER = -.1,
+                PRESS_POWER = .1,
+                ROTATE_POWER = .175;
+        final long
+                PRESS_TIME = 1500,
+                BACK_UP_TIME = 400,
+                INTERVAL_TIME = 100;
+
+
+        // STEP 5
+        jorge.opMode.telemetry.addData("Status", "Doing step 5 -- Backup for middle sensor");
+        jorge.opMode.telemetry.update();
+
+        jorge.drive.setAllModes(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        if (direction > 0) {
+            jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{ (-ROTATE_POWER)-.075, 0, 0, (-ROTATE_POWER)-.075 } );
+        } else {
+            jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{0, (-ROTATE_POWER)-.075, (-ROTATE_POWER)-.075, 0} );
+        }
+        //jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{0, (-ROTATE_POWER)-.075, (-ROTATE_POWER)-.075, 0} );
+        while ( !isSensorOnMiddle( jorge, AutonomousJorge.COLOR_SENSOR.MIDDLE ) ) {
+            if ( !jorge.opMode.opModeIsActive() ) return;
+        }
+
+
+        // STEP 6
+        ElapsedTime runtime = new ElapsedTime();
+        ElapsedTime runtime2 = new ElapsedTime();
+        jorge.opMode.telemetry.addData("Status", "Doing step 6 -- Pressing/rotating");
+        jorge.opMode.telemetry.update();
+
+        if ( presser == TurnToAngleTest.Direction.LEFT ) {
+            jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_L, Jorge.BEACON_DOWN );
+        } else {
+            jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_DOWN );
+        }
+
+        if (direction > 0) {
+            jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{0, 0, ROTATE_POWER, ROTATE_POWER} );
+        } else {
+            jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{ROTATE_POWER, ROTATE_POWER, 0, 0} );
+        }
+
+        //jorge.drive.setPowers( new String[]{"rf", "rb", "lf", "lb"}, new double[]{ROTATE_POWER, ROTATE_POWER, 0, 0} );
+        boolean forwarding = false;
+        runtime.reset();
+        while ( runtime.milliseconds() < PRESS_TIME ) {
+            if ( !jorge.opMode.opModeIsActive() ) return;
+            if ( !forwarding && isSensorOnMiddle( jorge, AutonomousJorge.COLOR_SENSOR.BACK ) ) {
+                jorge.drive.setAllPowers(PRESS_POWER); forwarding = true;
+            }
+        }
+        runtime2.reset();
+        jorge.drive.stopAll();
+
+
+        // STEP 7
+        updateStatus( jorge, "Doing step 7 -- Backing up" );
+        runtime.reset();
+        while ( runtime.milliseconds() < INTERVAL_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+        jorge.drive.setAllPowers(-.2);
+        runtime.reset();
+        while ( runtime.milliseconds() < BACK_UP_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+        jorge.drive.stopAll();
+
+
+//        updateStatus( jorge, "Doing step 8 -- Pressing multiple times if needed" );
+//        noTimes--;
+//        for ( int i = 0; i < noTimes; i++ ) {
+//
+//            while ( runtime2.milliseconds() < 6500 ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+//
+//            jorge.drive.setAllPowers(PRESS_POWER);
+//            runtime.reset();
+//            while ( runtime.milliseconds() < PRESS_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+//            runtime2.reset();
+//            jorge.drive.stopAll();
+//
+//            runtime.reset();
+//            while ( runtime.milliseconds() < INTERVAL_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+//
+//            jorge.drive.setAllPowers(BACK_UP_POWER - .05);
+//            runtime.reset();
+//            while ( runtime.milliseconds() < BACK_UP_TIME ) { if ( !jorge.opMode.opModeIsActive() ) return; }
+//            jorge.drive.stopAll();
+//        }
+
+        jorge.drive.stopAll();
+        jorge.servos.setPosition( Jorge.BEACON_PRESSER, Jorge.BEACON_UP );
+        jorge.servos.setPosition( AutonomousJorge.BEACON_PRESSER_R, AutonomousJorge.BEACON_PRESSER_R_UP );
+
+    }
+
+    @Deprecated public static void FULL_PRESS_BEACON (AutonomousJorge jorge, AutonomousJorge.BEACON facingBeacon) throws InterruptedException {
+
+        /*RED_PRESS_BEACON (jorge, 1);
 
         ElapsedTime runtime = new ElapsedTime();
         runtime.reset();
@@ -257,14 +512,16 @@ public class JorgeAutonomousFunctions {
         jorge.vuforia.checkOnBeacons(facingBeacon.index);
         if (jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_BLUE) {
             while (runtime.seconds() < 4) {jorge.opMode.telemetry.addData("Status", "Wrong color. Waiting to press..."); jorge.opMode.telemetry.update();}
-            PRESS_BEACON(jorge, 1);
+            RED_PRESS_BEACON(jorge, 1);
         }*/
+
+        if (!jorge.opMode.opModeIsActive()) return;
 
         jorge.vuforia.checkOnBeacons(facingBeacon.index);
         //if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_BLUE ) throw new Error("Woah, that shouldn't happen. Config = RED, BLUE");
         int noTimes = 1;
-        if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_RED ||
-                jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_RED ) noTimes++;
+        if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_RED ) {} else
+            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_RED ) noTimes++;
 
         PRESS_BEACON( jorge, noTimes );
 
@@ -272,8 +529,47 @@ public class JorgeAutonomousFunctions {
         if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_BLUE ) {/* Press again. Code doesn't exist yet... */}
 
     }
+    public static void FULL_PRESS_BEACON (AutonomousJorge jorge, AutonomousJorge.BEACON facingBeacon, SIDE side) throws InterruptedException {
+
+        /*RED_PRESS_BEACON (jorge, 1);
+
+        ElapsedTime runtime = new ElapsedTime();
+        runtime.reset();
+
+        jorge.vuforia.checkOnBeacons(facingBeacon.index);
+        if (jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_BLUE) {
+            while (runtime.seconds() < 4) {jorge.opMode.telemetry.addData("Status", "Wrong color. Waiting to press..."); jorge.opMode.telemetry.update();}
+            RED_PRESS_BEACON(jorge, 1);
+        }*/
+
+        if (!jorge.opMode.opModeIsActive()) return;
+
+        jorge.vuforia.checkOnBeacons(facingBeacon.index);
+        //if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_BLUE ) throw new Error("Woah, that shouldn't happen. Config = RED, BLUE");
+//        int noTimes = 1;
+//        if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_RED ) {} else
+//        if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_RED ) noTimes++;
+//
+//        PRESS_BEACON( jorge, noTimes );
+
+        if (side == SIDE.RED) {
+            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_RED ) { return; } else
+            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_RED ) {RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.RIGHT);}
+            else { RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.LEFT); }
+        } else {
+            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_BLUE ) { return; } else
+            if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.RED_BLUE ) {RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.RIGHT);}
+            else { RED_PRESS_BEACON(jorge, TurnToAngleTest.Direction.LEFT); }
+        }
+
+        //jorge.vuforia.checkOnBeacons(facingBeacon.index);
+        //if ( jorge.vuforia.getBeaconConfig(facingBeacon.index) == Vuforia2017Manager.BLUE_BLUE ) {/* Press again. Code doesn't exist yet... */}
+
+    }
 
     public static void TURN_TO_RELATIVE_ANGLE (AutonomousJorge jorge, int angle, Path.Direction dir) {
+
+        if (!jorge.opMode.opModeIsActive()) return;
 
         jorge.drive.setAllModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         jorge.drive.setAllModes(DcMotor.RunMode.RUN_TO_POSITION);
@@ -301,8 +597,6 @@ public class JorgeAutonomousFunctions {
         /*if (gyro.getHeading() != angle) {   Check doesn't work very well....
             rotateToAngle(angle, dir, gyro.getHeading(), encd);
         }*/
-
-        jorge.drive.setAllModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
     }
 
@@ -342,22 +636,54 @@ public class JorgeAutonomousFunctions {
 
     public static void DRIVE_FORWARD_IN ( AutonomousJorge jorge, float inches, double maxSpeed) {
 
+        if (!jorge.opMode.opModeIsActive()) return;
+
         int distance = Math.round((inches / IN_DISTANCE_PER_1680) * 1680);
         boolean slowedDown = false;
 
+        jorge.drive.setAllModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         jorge.drive.setAllModes(DcMotor.RunMode.RUN_TO_POSITION);
         jorge.drive.setAllTargetPositions(distance, maxSpeed);
 
         while (!compareTarget(jorge.drive.getAllPositions(), jorge.drive.getAllTargetPositions())) {
             if (!jorge.opMode.opModeIsActive()) return;
-            if (!slowedDown && jorge.drive.getPosition("rb") > Math.round(jorge.drive.getTargetPosition("rb")*(.75f))) {
+            if (!slowedDown &&
+                    Math.abs(jorge.drive.getPosition("rb")) > Math.abs(Math.round(jorge.drive.getTargetPosition("rb")*(.6f)))
+                    ) {
                 jorge.drive.setAllPowers(maxSpeed/2); slowedDown = true; }
         }
         jorge.drive.stopAll();
 
-        jorge.drive.setAllModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    }
+
+    public static void RED_FULL_BEACON (AutonomousJorge jorge) throws InterruptedException {
+
+        GO_TO_WHITE_LINE(jorge);
+
+        RED_STRAIGHTEN_ON_WHITE_LINE(jorge);
+
+        FULL_PRESS_BEACON(jorge, AutonomousJorge.BEACON.B1, SIDE.RED);
 
     }
+
+    public static void BLUE_FULL_BEACON (AutonomousJorge jorge) throws InterruptedException {
+
+        GO_TO_WHITE_LINE(jorge);
+
+        BLUE_STRAIGHTEN_ON_WHITE_LINE(jorge);
+
+        FULL_PRESS_BEACON(jorge, AutonomousJorge.BEACON.B1, SIDE.BLUE);
+
+    }
+
+    public static void SHOOT_1 (AutonomousJorge jorge) {
+        jorge.shoot(1);
+    }
+
+    public static void SHOOT_2 (AutonomousJorge jorge) {
+        jorge.shoot(2);
+    }
+
 
     private static LINE_POSITION getLinePosition (AutonomousJorge jorge, LINE_VALUES sensorValues) {
 

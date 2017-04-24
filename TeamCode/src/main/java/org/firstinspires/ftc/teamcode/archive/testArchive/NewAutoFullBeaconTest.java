@@ -61,7 +61,7 @@ public class NewAutoFullBeaconTest extends LinearOpMode {
 
         JorgeAutonomousFunctions.GO_TO_WHITE_LINE( jorge );
 
-        JorgeAutonomousFunctions.STRAIGHTEN_ON_WHITE_LINE( jorge );
+        JorgeAutonomousFunctions.RED_STRAIGHTEN_ON_WHITE_LINE( jorge );
 
         JorgeAutonomousFunctions.FULL_PRESS_BEACON( jorge, AutonomousJorge.BEACON.B1 );
 

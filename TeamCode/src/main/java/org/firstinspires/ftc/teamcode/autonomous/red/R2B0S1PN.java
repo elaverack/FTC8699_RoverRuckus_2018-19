@@ -30,9 +30,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
-
-import android.graphics.Path;
+package org.firstinspires.ftc.teamcode.autonomous.red;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -40,14 +38,15 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.autonomous.JorgeAutonomousMovement;
 import org.firstinspires.ftc.teamcode.robotHandlers.JorgeAutonomousFunctions;
 import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
 
-// Created on 4/23/2017 at 7:54 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/24/2017 at 5:34 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.autonomous.red
 
-@Autonomous(name = "AutoMoveToPointTest", group = "Linear Opmode")
+@Autonomous(name = "R2B0S1PN", group = "Linear Opmode")
 //@Disabled
-public class AutoMoveToPointTest extends LinearOpMode {
+public class R2B0S1PN extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -56,20 +55,19 @@ public class AutoMoveToPointTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new AutonomousJorge(this, false);
+        jorge = new AutonomousJorge(this);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
 
-        JorgeAutonomousFunctions.TURN_TO_RELATIVE_ANGLE(jorge, 90, Path.Direction.CCW);
+        JorgeAutonomousMovement.RED2_TO_SHOOTING_POSITION(jorge);
+        JorgeAutonomousFunctions.SHOOT_1(jorge);
 
         while (opModeIsActive()) {
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.update();
-
-
         }
     }
 }

@@ -30,8 +30,11 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode.archive.testArchive;
+package org.firstinspires.ftc.teamcode.toBeArchived;
 
+import android.graphics.Path;
+
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -39,36 +42,46 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.robotHandlers.JorgeAutonomousFunctions;
 import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
 
-// Created on 4/19/2017 at 5:49 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/23/2017 at 7:54 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "AutoLineTest", group = "Linear Opmode")
+@Autonomous(name = "AutoMoveCWToPointTest2", group = "Linear Opmode")
 //@Disabled
-public class NewAutoStraightenLineTest extends LinearOpMode {
+public class AutoMoveCWToPointTest2 extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
+
     private AutonomousJorge jorge;
+
+    private ModernRoboticsI2cGyro gyro;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
         jorge = new AutonomousJorge(this, false);
 
+        gyro = (ModernRoboticsI2cGyro) hardwareMap.gyroSensor.get("gyro");
+        gyro.calibrate();
+
+        while (gyro.isCalibrating()) {
+            telemetry.addData("Status", "Gyro is calibrating, don't move!"); telemetry.update();
+        }
+
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
 
-        JorgeAutonomousFunctions.GO_TO_WHITE_LINE(jorge);
+        JorgeAutonomousFunctions.DRIVE_FORWARD_FEET(jorge, 1, .8);
 
-        JorgeAutonomousFunctions.RED_STRAIGHTEN_ON_WHITE_LINE(jorge);
+        JorgeAutonomousFunctions.TURN_TO_RELATIVE_ANGLE(jorge, 65, Path.Direction.CW);
 
-        //Done.
+        JorgeAutonomousFunctions.DRIVE_FORWARD_IN(jorge, 34.25f, .8);
+
         while (opModeIsActive()) {
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            jorge.opMode.telemetry.addData("c0", "" + jorge.colorSensors.colorTemp(0));
-            jorge.opMode.telemetry.addData("c1", "" + jorge.colorSensors.colorTemp(1));
-            jorge.opMode.telemetry.addData("c2", "" + jorge.colorSensors.colorTemp(2));
+            telemetry.addData("Status", "Done. Gryo: " + gyro.getHeading());
             telemetry.update();
+
+
         }
     }
 }

@@ -30,23 +30,23 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
-
-import android.graphics.Path;
+package org.firstinspires.ftc.teamcode.autonomous.red;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.autonomous.JorgeAutonomousMovement;
 import org.firstinspires.ftc.teamcode.robotHandlers.JorgeAutonomousFunctions;
 import org.firstinspires.ftc.teamcode.robots.AutonomousJorge;
-import org.firstinspires.ftc.teamcode.robots.Jorge;
 
-// Created on 4/23/2017 at 7:54 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 4/24/2017 at 5:33 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.autonomous.red
 
-@Autonomous(name = "AutoMoveToPointTest2", group = "Linear Opmode")
+@Autonomous(name = "R1B1S2PC", group = "Linear Opmode")
 //@Disabled
-public class AutoMoveToPointTest2 extends LinearOpMode {
+public class R1B1S2PC extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -55,22 +55,24 @@ public class AutoMoveToPointTest2 extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        jorge = new AutonomousJorge(this, false);
+        jorge = new AutonomousJorge(this);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
 
-        //JorgeAutonomousFunctions.DRIVE_FORWARD_IN(jorge, thing, .8);
-        //JorgeAutonomousFunctions.TURN_TO_RELATIVE_ANGLE(jorge, angle1, Path.Direction.CCW);
-        //JorgeAutonomousFunctions.DRIVE_FORWARD_IN(jorge, thing2, .8);
+        JorgeAutonomousMovement.RED1_TO_BEACON(jorge);
+        JorgeAutonomousFunctions.RED_FULL_BEACON(jorge);
+
+        JorgeAutonomousMovement.RED1_TO_SHOOTING_POSITION(jorge);
+        JorgeAutonomousFunctions.SHOOT_2(jorge);
+
+        JorgeAutonomousMovement.RED1_TO_CORNER(jorge);
 
         while (opModeIsActive()) {
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.update();
-
-
         }
     }
 }
