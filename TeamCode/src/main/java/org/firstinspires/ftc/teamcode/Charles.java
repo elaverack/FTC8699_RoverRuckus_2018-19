@@ -25,11 +25,11 @@ public class Charles {
         opmode = om;
         drive = new DcMotor[2][2];
         drive[0] = new DcMotor[]{
-                opmode.hardwareMap.dcMotor.get("lf"),
-                opmode.hardwareMap.dcMotor.get("lb")};
+                opmode.hardwareMap.dcMotor.get(driveNames[0]),
+                opmode.hardwareMap.dcMotor.get(driveNames[1])};
         drive[1] = new DcMotor[]{
-                opmode.hardwareMap.dcMotor.get("rf"),
-                opmode.hardwareMap.dcMotor.get("rb")};
+                opmode.hardwareMap.dcMotor.get(driveNames[2]),
+                opmode.hardwareMap.dcMotor.get(driveNames[3])};
     }
 
     /** Drive modes: */
