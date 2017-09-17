@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 public class Charles {
 
@@ -30,6 +31,9 @@ public class Charles {
         drive[1] = new DcMotor[]{
                 opmode.hardwareMap.dcMotor.get(driveNames[2]),
                 opmode.hardwareMap.dcMotor.get(driveNames[3])};
+        // Set left side to drive backwards
+        for (DcMotor motor:drive[0]) { motor.setDirection(DcMotorSimple.Direction.REVERSE); }
+        // Set right side to drive forwards        for (DcMotor motor:drive[1]) { motor.setDirection(DcMotorSimple.Direction.FORWARD); }
     }
 
     /** Drive modes: */
