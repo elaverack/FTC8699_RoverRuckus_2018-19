@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 public class Charles {
 
@@ -14,9 +15,7 @@ public class Charles {
     // Layout is {{left front, left back}, {right front, right back}}. Think left first, front first.
     private DcMotor[][] drive;
     private final static String[] driveNames = {
-            "lf",   // Left front   (NW)
             "lb",   // Left back    (SW)
-            "rf",   // Right front  (NE)
             "rb"    // Right back   (SE)
     };
 
@@ -25,29 +24,30 @@ public class Charles {
         opmode = om;
         drive = new DcMotor[2][2];
         drive[0] = new DcMotor[]{
-                opmode.hardwareMap.dcMotor.get("lf"),
                 opmode.hardwareMap.dcMotor.get("lb")};
         drive[1] = new DcMotor[]{
-                opmode.hardwareMap.dcMotor.get("rf"),
                 opmode.hardwareMap.dcMotor.get("rb")};
+        drive[0][0].setDirection(DcMotorSimple.Direction.FORWARD);
+        drive[1][0].setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     /** Drive modes: */
     public void tankDrive() {
         drive[0][0].setPower(-opmode.gamepad1.left_stick_y);
-        drive[0][1].setPower(-opmode.gamepad1.left_stick_y);
         drive[1][0].setPower(-opmode.gamepad1.right_stick_y);
-        drive[1][1].setPower(-opmode.gamepad1.right_stick_y);
     }
 
     // Note: guessing which direction right is for left-stick-x (assuming positive)
     public void arcaneDrive() {
-        double left = opmode.gamepad1.left_stick_x - opmode.gamepad1.right_stick_y;
+        double left = - opmode.gamepad1.right_stick_y + opmode.gamepad1.left_stick_x;
         double right = - opmode.gamepad1.right_stick_y - opmode.gamepad1.left_stick_x;
         drive[0][0].setPower(left);
-        drive[0][1].setPower(left);
         drive[1][0].setPower(right);
-        drive[1][1].setPower(right);
+    }
+
+    public void stop() {
+        drive[0][0].setPower(0);
+        drive[1][0].setPower(0);
     }
 
 }
