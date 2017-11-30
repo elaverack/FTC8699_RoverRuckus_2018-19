@@ -132,11 +132,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           android:orientation="vertical"
           >
 
-        <ImageView
-            android:id="@+id/OpenCVPreview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:src="@color/background_white" />
       </LinearLayout>
 
       <!-- When visible, the error message will overlay and thus partially

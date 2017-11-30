@@ -35,7 +35,7 @@ public class VuforiaHandler {
         init(doPreview);
     }
 
-    public void init(boolean doPreview) {
+    private void init(boolean doPreview) {
 
         VuforiaLocalizer.Parameters parameters;
 
