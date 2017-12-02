@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.visuals;
+package org.firstinspires.ftc.teamcode.autonomous.visuals;
 
 // Created on 11/1/2017 at 7:52 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
@@ -10,7 +10,6 @@ import com.vuforia.PIXEL_FORMAT;
 import com.vuforia.Vuforia;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
@@ -74,6 +73,11 @@ public class VuforiaHandler {
     public String lookingAt() {
         if (!anyVisible()) return "";
         return vuMark.name();
+    }
+
+    public RelicRecoveryVuMark lookingAtMark() {
+        if (!anyVisible()) return null;
+        return vuMark;
     }
 
     public Bitmap takePicture() throws InterruptedException {
