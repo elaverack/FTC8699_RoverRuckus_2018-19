@@ -85,7 +85,7 @@ public class VisualsHandler {
         ImageView iv = new ImageView(opmode.hardwareMap.appContext);
         iv.setId(PREVIEW_ID);
         layout = new LayoutInterfacer(opmode, getPreviewContainer(), iv);
-
+        setPreview(generateIntro(getPreviewContainer().getWidth()));
     }
 
     public LinearLayout getPreviewContainer() {
