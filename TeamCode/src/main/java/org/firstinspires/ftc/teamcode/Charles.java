@@ -45,6 +45,7 @@ public class Charles {
         drive[1][0].setPower(right);
     }
 
+
     public void stop() {
         drive[0][0].setPower(0);
         drive[1][0].setPower(0);
