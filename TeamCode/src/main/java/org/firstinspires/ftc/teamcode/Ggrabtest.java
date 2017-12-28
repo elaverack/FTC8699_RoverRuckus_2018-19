@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -14,8 +16,20 @@ public class Ggrabtest extends OpMode {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
     private Servo bl, br, tl, tr;
-    private int sw = 1;
-    private int sw2 = 1;
+    private DcMotor r,l;
+    private boolean
+            a = false,
+            b = false;
+
+    private final double
+            blo = 0.078,
+            blc = 0.294,
+            bro = 0.98,
+            brc = 0.725,
+            tlo = 0.98,
+            tlc = 0.725,
+            tro = 0.118,
+            trc = 0.392;
 
 
     /*
@@ -23,10 +37,15 @@ public class Ggrabtest extends OpMode {
      */
     @Override
     public void init() {
-        bl = hardwareMap.servo.get(bl);
-        br = hardwareMap.servo.get(br);
-        tl = hardwareMap.servo.get(tl);
-        tr = hardwareMap.servo.get(tr);
+        bl = hardwareMap.servo.get("bl");
+        br = hardwareMap.servo.get("br");
+        tl = hardwareMap.servo.get("tl");
+        tr = hardwareMap.servo.get("tr");
+        r = hardwareMap.dcMotor.get("r");
+        l = hardwareMap.dcMotor.get("l");
+
+        l.setDirection(DcMotorSimple.Direction.FORWARD);
+        r.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -45,10 +64,10 @@ public class Ggrabtest extends OpMode {
      */
     @Override
     public void start() {
-        bl.setPosition(0.294);
-        br.setPosition(0.725);
-        tl.setPosition(0.725);
-        tr.setPosition(0.392);
+        bl.setPosition(blo);
+        br.setPosition(bro);
+        tl.setPosition(tlo);
+        tr.setPosition(tro);
         runtime.reset();
     }
 
@@ -58,37 +77,44 @@ public class Ggrabtest extends OpMode {
      */
     @Override
     public void loop() {
-        if (gamepad1.a())    //bottom
-        {
-            if (sw == 1) //open it
-            {
-                bl.setPosition(0.078);
-                br.setPosition(0.98);
-                sw *= -1
-            }
-            else             //close it
-            {
-                bl.setPosition(0.294);
-                br.setPosition(0.725);
-                sw *= -1;
-            }
-        }
 
-        if (gamepad1.b())        //top
-        {
-            if (sw2 == 1)     //open it
-            {
-                tl.setPosition(0.98);
-                tr.setPosition(0.118);
-                sw2 *= -1
+        double left = - gamepad1.right_stick_y + gamepad1.left_stick_x;
+        double right = - gamepad1.right_stick_y - gamepad1.left_stick_x;
+
+        if (gamepad1.right_trigger > 0.5) { left /= 4; right /= 4; }
+
+        l.setPower(left);
+        r.setPower(right);
+
+        if (!a && gamepad1.a) { // bottom
+
+            if (bl.getPosition() == blo) {
+                //close
+                bl.setPosition(blc);
+                br.setPosition(brc);
+            } else {
+                //open
+                bl.setPosition(blo);
+                br.setPosition(bro);
             }
-            else              //close it
-            {
-                tl.setPosition(0.392);
-                tr.setPosition(0.723);
-                sw2 *= -1;
+
+            a = true;
+        } else if (a && !gamepad1.a) a = false;
+
+        if (!b && gamepad1.b) { // top
+
+            if (tl.getPosition() == tlo) {
+                //close
+                tl.setPosition(tlc);
+                tr.setPosition(trc);
+            } else {
+                //open
+                tl.setPosition(tlo);
+                tr.setPosition(tro);
             }
-        }
+
+            b = true;
+        } else if (b && !gamepad1.b) b = false;
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
     }
@@ -98,7 +124,8 @@ public class Ggrabtest extends OpMode {
      */
     @Override
     public void stop() {
-
+        l.setPower(0);
+        r.setPower(0);
     }
 
 }
