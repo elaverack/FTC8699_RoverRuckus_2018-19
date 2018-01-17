@@ -93,8 +93,6 @@ public class Charles {
     public void tankDrive() {
         drive[0][0].setPower(-opmode.gamepad1.left_stick_y);
         drive[1][0].setPower(-opmode.gamepad1.right_stick_y);
-
-
     }
 
     // Note: guessing which direction right is for left-stick-x (assuming positive)

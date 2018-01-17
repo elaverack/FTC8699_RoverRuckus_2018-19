@@ -12,10 +12,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name = "mecanlift", group = "Iterative Opmode")
 //@Disabled
 public class Mecanlift extends OpMode {
-    // Declare OpMode members.
+
     private ElapsedTime runtime = new ElapsedTime();
     private Servo bl, br, tl, tr;
-    private DcMotor rf,rb,lf,lb;
+    private DcMotor rf, rb, lf, lb;
     private boolean
             a = false,
             b = false;
@@ -30,41 +30,28 @@ public class Mecanlift extends OpMode {
             tro = 0.118,
             trc = 0.392;
 
-
-    /*
-     * Code to run ONCE when the driver hits INIT
-     */
     @Override
     public void init() {
         bl = hardwareMap.servo.get("bl");
         br = hardwareMap.servo.get("br");
         tl = hardwareMap.servo.get("tl");
         tr = hardwareMap.servo.get("tr");
+
         rf = hardwareMap.dcMotor.get("rf");
         rb = hardwareMap.dcMotor.get("rb");
         lf = hardwareMap.dcMotor.get("lf");
         lb = hardwareMap.dcMotor.get("lb");
-
         lf.setDirection(DcMotorSimple.Direction.FORWARD);
         rf.setDirection(DcMotorSimple.Direction.REVERSE);
         lb.setDirection(DcMotorSimple.Direction.FORWARD);
         rb.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
     }
 
-    /*
-     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
-     */
     @Override
-    public void init_loop() {
+    public void init_loop() { }
 
-    }
-
-    /*
-     * Code to run ONCE when the driver hits PLAY
-     */
     @Override
     public void start() {
         bl.setPosition(blo);
@@ -74,10 +61,6 @@ public class Mecanlift extends OpMode {
         runtime.reset();
     }
 
-
-    /*
-     * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
-     */
     @Override
     public void loop() {
 
@@ -108,42 +91,22 @@ public class Mecanlift extends OpMode {
         rf.setPower(powerRF);
         rb.setPower(powerRB);
 
-        if (!a && gamepad1.a) { // bottom
 
-            if (bl.getPosition() == blo) {
-                //close
-                bl.setPosition(blc);
-                br.setPosition(brc);
-            } else {
-                //open
-                bl.setPosition(blo);
-                br.setPosition(bro);
-            }
-
+        if (!a && gamepad1.a) { // bottom gripper
+            if (bl.getPosition() == blo) { bl.setPosition(blc); br.setPosition(brc); }  // close
+            else { bl.setPosition(blo); br.setPosition(bro); } // open
             a = true;
         } else if (a && !gamepad1.a) a = false;
-
-        if (!b && gamepad1.b) { // top
-
-            if (tl.getPosition() == tlo) {
-                //close
-                tl.setPosition(tlc);
-                tr.setPosition(trc);
-            } else {
-                //open
-                tl.setPosition(tlo);
-                tr.setPosition(tro);
-            }
-
+        if (!b && gamepad1.b) { // top gripper
+            if (tl.getPosition() == tlo) { tl.setPosition(tlc); tr.setPosition(trc); } // close
+            else { tl.setPosition(tlo); tr.setPosition(tro); } // open
             b = true;
         } else if (b && !gamepad1.b) b = false;
+
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
     }
 
-    /*
-     * Code to run ONCE after the driver hits STOP
-     */
     @Override
     public void stop() {
         lf.setPower(0);

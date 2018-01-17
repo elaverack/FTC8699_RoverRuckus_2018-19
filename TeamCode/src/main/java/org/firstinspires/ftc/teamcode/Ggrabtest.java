@@ -16,20 +16,31 @@ public class Ggrabtest extends OpMode {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
     private Servo bl, br, tl, tr;
-    private DcMotor r,l;
+    private DcMotor r,l,lift;
     private boolean
-            a = false,
-            b = false;
+            a       = false,
+            b       = false,
+            y       = false,
+            up      = false,
+            down    = false;
 
     private final double
-            blo = 0.078,
-            blc = 0.294,
-            bro = 0.98,
-            brc = 0.725,
-            tlo = 0.98,
-            tlc = 0.725,
-            tro = 0.118,
-            trc = 0.392;
+            blo     = 0.078,
+            blc     = 0.294,
+            bro     = 0.98,
+            brc     = 0.725,
+            tlo     = 0.98,
+            tlc     = 0.725,
+            tro     = 0.118,
+            trc     = 0.392,
+            liftS   = .55,
+            liftDS  = .25;
+
+    private final int
+            lift0 = 0,
+            lift1 = 3000,
+            lift2 = 5330,
+            thres = 10;
 
 
     /*
@@ -43,9 +54,14 @@ public class Ggrabtest extends OpMode {
         tr = hardwareMap.servo.get("tr");
         r = hardwareMap.dcMotor.get("r");
         l = hardwareMap.dcMotor.get("l");
+        lift = hardwareMap.dcMotor.get("lift");
 
         l.setDirection(DcMotorSimple.Direction.FORWARD);
         r.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        lift.setDirection(DcMotorSimple.Direction.REVERSE);
+        lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -86,35 +102,93 @@ public class Ggrabtest extends OpMode {
         l.setPower(left);
         r.setPower(right);
 
-        if (!a && gamepad1.a) { // bottom
+//        if (!a && gamepad1.a) { // bottom
+//
+//            if (bl.getPosition() == blo) {
+//                //close
+//                bl.setPosition(blc);
+//                br.setPosition(brc);
+//            } else {
+//                //open
+//                bl.setPosition(blo);
+//                br.setPosition(bro);
+//            }
+//
+//            a = true;
+//        } else if (a && !gamepad1.a) a = false;
+//
+//        if (!b && gamepad1.b) { // top
+//
+//            if (tl.getPosition() == tlo) {
+//                //close
+//                tl.setPosition(tlc);
+//                tr.setPosition(trc);
+//            } else {
+//                //open
+//                tl.setPosition(tlo);
+//                tr.setPosition(tro);
+//            }
+//
+//            b = true;
+//        } else if (b && !gamepad1.b) b = false;
 
-            if (bl.getPosition() == blo) {
-                //close
-                bl.setPosition(blc);
-                br.setPosition(brc);
-            } else {
-                //open
-                bl.setPosition(blo);
-                br.setPosition(bro);
+        tr.setPosition(tro + (trc - tro) * gamepad1.left_trigger);
+        tl.setPosition(tlo + (tlc - tlo) * gamepad1.left_trigger);
+        br.setPosition(bro + (brc - bro) * gamepad1.right_trigger);
+        bl.setPosition(blo + (blc - blo) * gamepad1.right_trigger);
+
+        // Lift
+        if (!up && gamepad1.dpad_up) {
+            switch (lift.getTargetPosition()) {
+                case lift0:
+                    lift.setTargetPosition(lift1);
+                    lift.setPower(liftS);
+                    break;
+                case lift1:
+                    lift.setTargetPosition(lift2);
+                    lift.setPower(liftS);
+                    break;
+                case lift2:
+                    lift.setTargetPosition(lift1);
+                    lift.setPower(-liftS);
+                    break;
             }
+            up = true;
+        } else if (up && !gamepad1.dpad_up) up = false;
 
+        if (!down && gamepad1.dpad_down) {
+            lift.setTargetPosition(lift0);
+            lift.setPower(-liftS);
+        } else if (!gamepad1.dpad_down) down = false;
+
+        if (lift.getMode() == DcMotor.RunMode.RUN_TO_POSITION &&
+                (lift.getCurrentPosition() < lift.getTargetPosition() + thres &&
+                        lift.getCurrentPosition() > lift.getTargetPosition() - thres)) {
+            lift.setPower(0);
+        }
+
+        if (!y && gamepad1.y) { // First press of y
+            lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            lift.setPower(liftDS);
+            y = true;
+        } else if (y && gamepad1.y) { // Holding y
+            lift.setPower(liftDS);
+        } else if (y) { // Release of y
+            lift.setPower(0);
+            y = false;
+            lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+        if (!a && gamepad1.a) { // First press of a
+            lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            lift.setPower(-liftDS);
             a = true;
-        } else if (a && !gamepad1.a) a = false;
-
-        if (!b && gamepad1.b) { // top
-
-            if (tl.getPosition() == tlo) {
-                //close
-                tl.setPosition(tlc);
-                tr.setPosition(trc);
-            } else {
-                //open
-                tl.setPosition(tlo);
-                tr.setPosition(tro);
-            }
-
-            b = true;
-        } else if (b && !gamepad1.b) b = false;
+        } else if (a && gamepad1.a) { // Holding a
+            lift.setPower(-liftDS);
+        } else if (a) { // Release of a
+            lift.setPower(0);
+            a = false;
+            lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
     }
@@ -126,6 +200,7 @@ public class Ggrabtest extends OpMode {
     public void stop() {
         l.setPower(0);
         r.setPower(0);
+        lift.setPower(0);
     }
 
 }
