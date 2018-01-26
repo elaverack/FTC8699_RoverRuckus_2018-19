@@ -30,47 +30,80 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.comp1216;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-// Created on 10/14/2017 at 8:33 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
+// Created on 10/14/2017 at 1:09 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@TeleOp(name = "CharlesDrive", group = "Iterative Opmode")
+@TeleOp(name = "DylenDrive", group = "Iterative Opmode")
 // @Autonomous(...) is the other common choice
-//@Disabled
-public class CharlesDrive extends OpMode {
+@Disabled
+public class DylenDrive extends OpMode
+{
     //Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private Charles robot;
+    private Dylen robot;
 
     //Code to run ONCE when the driver hits INIT
     @Override
-    public void init() {
+    public void init()
+    {
+        robot = new Dylen(this);
         telemetry.addData("Status", "Initialized");
-        robot = new Charles(this);
+
+        /* eg: Initialize the hardware variables. Note that the strings used here as parameters
+         * to 'get' must correspond to the names assigned during the robot configuration
+         * step (using the FTC Robot Controller app on the phone).
+         */
+        // eg: Set the drive motor directions:
+        // Reverse the motor that runs backwards when connected directly to the battery
+        // Set to REVERSE if using AndyMark motors
+        // Set to FORWARD if using AndyMark motors
+
+
     }
 
     //Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
     @Override
-    public void init_loop() { }
+    public void init_loop()
+    {
+
+
+    }
 
     //Code to run ONCE when the driver hits PLAY
     @Override
-    public void start() { runtime.reset(); robot.start(); }
+    public void start()
+    {
+
+        runtime.reset();
+
+
+    }
 
     //Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
     @Override
-    public void loop() {
+    public void loop()
+    {
         telemetry.addData("Status", "Running: " + runtime.toString());
-        robot.arcaneDrive();
+        robot.drive();
+        // eg: Run wheels in tank mode (note: The joystick goes negative when pushed forwards)
+
+
     }
 
     //Code to run ONCE after the driver hits STOP
     @Override
-    public void stop() { robot.stop(); }
+    public void stop()
+    {
+        robot.stop();
+        // eg: Set all motor powers to 0
+
+
+    }
 
 }

@@ -5,6 +5,7 @@ package org.firstinspires.ftc.teamcode.autonomous.visuals;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.os.Environment;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
@@ -23,6 +24,10 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+
 public class VisualsHandler {
 
     public enum JEWEL_CONFIG {
@@ -39,7 +44,6 @@ public class VisualsHandler {
             return BLUE_RED;
         }
     }
-
     public enum COL_CONFIG {
         LEFT("LEFT", 1), MID("MIDDLE", 2), RIGHT("RIGHT", 3);
 
@@ -55,29 +59,31 @@ public class VisualsHandler {
         }
     }
 
+    private final static int PREVIEW_ID = 314159;
+    private final static double
+            SAT_L       = 128,
+            SAT_H       = 255,
+            VAL_L       = 160,
+            VAL_H       = 255,
+            RESIZE_FACT = .25;
+    private final static Scalar
+            RED_L       = new Scalar(0,     SAT_L,  VAL_L),
+            RED_H       = new Scalar(42.5,  SAT_H,  VAL_H),
+            BLUE_L      = new Scalar(127.5, SAT_L,  VAL_L),
+            BLUE_H      = new Scalar(198.3, SAT_H,  VAL_H);
+    private final static Size JEWELS_BSIZE = new Size(4,4);
+    private final String PHOTO_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
+
+
     public VuforiaHandler vuforia;
+    public LayoutInterfacer layout;
+
     public JEWEL_CONFIG jewel_config;
     public COL_CONFIG column_config;
 
-    public LayoutInterfacer layout;
-
     private OpMode opmode;
 
-    private final static int PREVIEW_ID = 314159;
-    private final static double
-            SAT_L=128,
-            SAT_H=255,
-            VAL_L=160,
-            VAL_H=255,
-            RESIZE_FACT = .25;
-    private final static Scalar
-            RED_L = new Scalar(0,SAT_L,VAL_L),
-            RED_H = new Scalar(42.5,SAT_H,VAL_H),
-            BLUE_L = new Scalar(127.5,SAT_L,VAL_L),
-            BLUE_H = new Scalar(198.3,SAT_H,VAL_H);
-    private final static Size JEWELS_BSIZE = new Size(4,4);
-
-    public VisualsHandler(OpMode om) {
+    @Deprecated public VisualsHandler(OpMode om) {
         opmode = om;
         vuforia = new VuforiaHandler(opmode,false);
         OpenCVLoader.initDebug();
@@ -86,6 +92,16 @@ public class VisualsHandler {
         iv.setId(PREVIEW_ID);
         layout = new LayoutInterfacer(opmode, getPreviewContainer(), iv);
         setPreview(generateIntro(getPreviewContainer().getWidth()));
+    }
+    public VisualsHandler(OpMode om, boolean doVuforiaPreview) {
+        opmode = om;
+        vuforia = new VuforiaHandler(opmode,doVuforiaPreview);
+        OpenCVLoader.initDebug();
+        // Initialize preview
+        ImageView iv = new ImageView(opmode.hardwareMap.appContext);
+        iv.setId(PREVIEW_ID);
+        layout = new LayoutInterfacer(opmode, getPreviewContainer(), iv);
+        if (!doVuforiaPreview) setPreview(generateIntro(getPreviewContainer().getWidth()));
     }
 
     public LinearLayout getPreviewContainer() {
@@ -190,7 +206,9 @@ public class VisualsHandler {
         setPreview(image);
     }
 
-    public Mat takeMatPicture() throws InterruptedException{ return BitmapToMat(fixBitmap(vuforia.takePicture())); }
+    public Mat takeMatPicture() throws InterruptedException { return BitmapToMat(fixBitmap(vuforia.takePicture())); }
+
+    public Mat takeAndSavePic(String name) throws InterruptedException { Mat ret = takeMatPicture(); savePhoto(ret, name); return ret; }
 
     public static Bitmap fixBitmap(Bitmap orig) {
         Matrix matrix = new Matrix();
@@ -234,5 +252,28 @@ public class VisualsHandler {
         Imgproc.putText(intro, l2, points[1], font, size, color);
         Core.bitwise_not(intro, intro);
         return intro;
+    }
+
+    private void savePhoto (Mat mat, String fileName) {
+
+        Bitmap bmp = Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.RGB_565);
+        Utils.matToBitmap(mat, bmp);
+
+        File file = new File(PHOTO_DIRECTORY, fileName);
+
+        if (file.exists()) {
+            String newFileName = fileName.split(".png")[0];
+            int i = 2; file = new File(PHOTO_DIRECTORY, newFileName + " (" + i + ").png");
+            while (file.exists()) { i++; file = new File(PHOTO_DIRECTORY, newFileName + " (" + i + ").png"); }
+        }
+
+        if (bmp != null) {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            bmp.compress(Bitmap.CompressFormat.PNG, 0, bos);
+            byte[] bitmapdata = bos.toByteArray();
+            try { FileOutputStream f = new FileOutputStream(file); f.write(bitmapdata); f.flush(); f.close(); }
+            catch (Exception e) { /* meh */ }
+        }
+
     }
 }

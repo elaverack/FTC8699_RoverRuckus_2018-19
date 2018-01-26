@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.comp0120;
 
 // Created on 1/20/2018 at 12:59 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
@@ -14,25 +14,26 @@ public class unnamed_v2 {
     protected static final int thres = 10;
 
     protected static final String
-            drive_rfN = "rf",
-            drive_rbN = "rb",
-            drive_lfN = "lf",
-            drive_lbN = "lb",
+            drive_rfN = "rf",   // The front right motor name
+            drive_rbN = "rb",   // The back right motor name
+            drive_lfN = "lf",   // The front left motor name
+            drive_lbN = "lb",   // The back left motor name
 
-            grabber_blN = "bl", // Note: Looking at robot, not from
-            grabber_brN = "br",
-            grabber_tlN = "tl",
-            grabber_trN = "tr",
+            // Note: Looking at robot, not from
+            grabber_blN = "bl", // The bottom left grabber servo name
+            grabber_brN = "br", // The bottom right grabber servo name
+            grabber_tlN = "tl", // The top left grabber servo name
+            grabber_trN = "tr", // The top right grabber servo name
 
-            liftN = "lift",
+            liftN = "lift",     // The lift motor name
 
-            jewelN = "jewel",
-            colorN = "color",
-            gyroN = "gyro";
+            jewelN = "jewel",   // The jewel arm servo motor name
+            colorN = "color",   // The jewel arm color sensor name
+            gyroN = "gyro";     // The gyro sensor name
 
     private static final double
-            jewel_down = .18,
-            jewel_up = 1;
+            jewel_down = .18,   // The jewel servo position for lowering the arm
+            jewel_up = 1;       // The jewel servo position for raising the arm
 
     protected OpMode opmode;
     protected DcMotor rf, rb, lf, lb;
@@ -292,9 +293,7 @@ public class unnamed_v2 {
 
         }
 
-        void stop() {
-            l.setPower(0);
-        }
+        void stop() { l.setPower(0); }
 
     }
 
