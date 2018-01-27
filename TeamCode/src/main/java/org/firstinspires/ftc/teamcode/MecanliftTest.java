@@ -10,9 +10,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 // Created on 1/25/2018 at 2:35 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@TeleOp(name = "mecanliftTest", group = "Iterative Opmode")
+@TeleOp(name = "MecanliftTest", group = "Iterative Opmode")
 //@Disabled
-public class mecanliftTest extends OpMode {
+public class MecanliftTest extends OpMode {
 
     private static final double     // Grabber servo positions
             blo = 0.078,            // Bottom left open
