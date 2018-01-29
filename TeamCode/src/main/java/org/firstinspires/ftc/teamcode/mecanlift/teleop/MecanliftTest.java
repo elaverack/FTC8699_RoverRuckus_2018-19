@@ -1,16 +1,17 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.mecanlift.teleop;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.teamcode.mecanlift.controller.Lift;
+import org.firstinspires.ftc.teamcode.mecanlift.controller.ToggleServo;
 
 // Created on 1/25/2018 at 2:35 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@TeleOp(name = "MecanliftTest", group = "Iterative Opmode")
+@TeleOp(name = "Mecanlift Test", group = "Iterative Opmode")
 //@Disabled
 public class MecanliftTest extends OpMode {
 
@@ -159,28 +160,8 @@ public class MecanliftTest extends OpMode {
         } else if (!gamepad2.dpad_down && ddown[1]) ddown[1] = false;
         return false;
     }
-    private boolean do_y () {
-        if (gamepad1.y && !y[0]) {
-            y[0] = true;
-            return true;
-        } else if (!gamepad1.y && y[0]) y[0] = false;
-        if (gamepad2.y && !y[1]) {
-            y[1] = true;
-            return true;
-        } else if (!gamepad2.y && y[1]) y[1] = false;
-        return false;
-    }
-    private boolean do_x () {
-        if (gamepad1.x && !x[0]) {
-            x[0] = true;
-            return true;
-        } else if (!gamepad1.x && x[0]) x[0] = false;
-        if (gamepad2.x && !x[1]) {
-            x[1] = true;
-            return true;
-        } else if (!gamepad2.x && x[1]) x[1] = false;
-        return false;
-    }
+    private boolean do_y () { return gamepad1.y || gamepad2.y; }
+    private boolean do_x () { return gamepad1.x || gamepad2.x; }
     private boolean do_a () {
         if (gamepad1.a && !a[0]) {
             a[0] = true;

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.mecanlift.controller;
 
 // Created on 1/26/2018 at 3:41 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
@@ -18,7 +18,7 @@ public class ToggleServo {
 
     public void close () { s.setPosition(c); }
     public void open () { s.setPosition(o); }
-    public void toggle () { if (s.getPosition() == o) { close(); } }
+    public void toggle () { if (s.getPosition() == o) { close(); } else { open(); } }
 
     /** tob = toggle on button */
     public void tob (boolean button) {
@@ -37,5 +37,11 @@ public class ToggleServo {
         if (button && !closed) { close(); closed = true; return; }
         if (!button && closed) { open(); closed = false; }
     }
+
+    /**
+     * Set the position of the servo between open and close.
+     * @param pos Value between 0 and 1, 0 being open and 1 being closed.
+     */
+    public void setPos (double pos) { s.setPosition(o + pos*(c - o)); }
 
 }

@@ -1,10 +1,12 @@
-package org.firstinspires.ftc.teamcode.autonomous.visuals;
+package org.firstinspires.ftc.teamcode.visuals;
 
 // Created on 11/4/2017 at 12:14 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.hardware.Camera;
 import android.os.Environment;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -75,6 +77,8 @@ public class VisualsHandler {
     private final String PHOTO_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
 
 
+    public int vertx = 20, hory = 20;
+
     public VuforiaHandler vuforia;
     public LayoutInterfacer layout;
 
@@ -82,6 +86,7 @@ public class VisualsHandler {
     public COL_CONFIG column_config;
 
     private OpMode opmode;
+    private boolean hasLight = false, light = false;
 
     @Deprecated public VisualsHandler(OpMode om) {
         opmode = om;
@@ -95,6 +100,7 @@ public class VisualsHandler {
     }
     public VisualsHandler(OpMode om, boolean doVuforiaPreview) {
         opmode = om;
+        hasLight = opmode.hardwareMap.appContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
         vuforia = new VuforiaHandler(opmode,doVuforiaPreview);
         OpenCVLoader.initDebug();
         // Initialize preview
@@ -110,6 +116,20 @@ public class VisualsHandler {
     }
     public ImageView getPreview() { return (ImageView)layout.getView(PREVIEW_ID); }
     public void close() { layout.close(); }
+
+    public void togglePhoneLight () {
+        if (!hasLight) return;
+        Camera c = Camera.open();
+        Camera.Parameters p = c.getParameters();
+        if (light) {
+            p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+            c.setParameters(p);
+            light = false; return;
+        }
+        p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+        c.setParameters(p);
+        light = true;
+    }
 
     public void checkJewels() throws InterruptedException {
         Mat
@@ -190,6 +210,35 @@ public class VisualsHandler {
         setPreview(jewels);
     }
 
+    public void showAlignmentLines () throws InterruptedException {
+        Mat img = new Mat();
+        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+        drawVert(img, vertx);
+        drawHor(img, hory);
+        setPreview(img);
+    }
+    public void tryAlignmentLines (float vert, float hor) throws InterruptedException {
+        if (vert == 0 && hor == 0) return;
+        Mat img = new Mat();
+        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+        if (vert != 0) {
+            vertx += (int)(vert*10f);
+            if (vertx < 0) vertx = 0;
+            if (vertx > img.width()) vertx = img.width();
+            drawVert(img, vertx);
+            drawHor(img, hory);
+            setPreview(img);
+        }
+        if (hor != 0) {
+            hory += (int)(hor*10f);
+            if (hory < 0) hory = 0;
+            if (hory > img.width()) hory = img.width();
+            drawVert(img, vertx);
+            drawHor(img, hory);
+            setPreview(img);
+        }
+    }
+
     public static Point getCOM(Mat image, Scalar colorHigh, Scalar colorLow) {
         Mat mask = mask(image, colorHigh, colorLow);
         Moments mmnts = Imgproc.moments(mask,true);
@@ -254,6 +303,15 @@ public class VisualsHandler {
         return intro;
     }
 
+    private static Mat drawVert(Mat mat, int x) {
+        Imgproc.line(mat, new Point(x,0), new Point(x,mat.height()), new Scalar(255,0,0), 8);
+        return mat;
+    }
+    private static Mat drawHor(Mat mat, int y) {
+        Imgproc.line(mat, new Point(0,y), new Point(mat.width(),y), new Scalar(255,0,0), 8);
+        return mat;
+    }
+
     private void savePhoto (Mat mat, String fileName) {
 
         Bitmap bmp = Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.RGB_565);
@@ -276,4 +334,6 @@ public class VisualsHandler {
         }
 
     }
+
+
 }

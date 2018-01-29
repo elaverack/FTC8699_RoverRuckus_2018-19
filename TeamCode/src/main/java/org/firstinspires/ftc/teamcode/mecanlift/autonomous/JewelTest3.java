@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.autonomous;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous;
 
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,13 +9,13 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.autonomous.visuals.VisualsHandler;
+import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 
 // Created on 11/15/2017 at 7:47 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "Jewel Test 2", group = "test")
+@Autonomous(name = "Jewel Test 3", group = "test")
 //@Disabled
-public class JewelTest2 extends LinearOpMode {
+public class JewelTest3 extends LinearOpMode {
 
     private static final int BUTTON_ID = 3141592;
 
@@ -40,6 +40,8 @@ public class JewelTest2 extends LinearOpMode {
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         vh.layout.createViews(button);
 
+        vh.togglePhoneLight();
+
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
@@ -49,6 +51,7 @@ public class JewelTest2 extends LinearOpMode {
             // This is the time during which I can press the button and take pictures.
             //  Nothing needs to be done by the opmode.
 
+        vh.togglePhoneLight();
         vh.close();
 
     }

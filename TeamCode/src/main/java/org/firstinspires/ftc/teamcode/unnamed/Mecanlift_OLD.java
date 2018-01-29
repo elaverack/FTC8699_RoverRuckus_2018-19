@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.comp0120;
+package org.firstinspires.ftc.teamcode.unnamed;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "mecanlift", group = "Iterative Opmode")
 @Disabled
-public class Mecanlift extends OpMode {
+public class Mecanlift_OLD extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Servo bl, br, tl, tr;

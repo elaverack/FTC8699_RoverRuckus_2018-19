@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.comp0120;
+package org.firstinspires.ftc.teamcode.unnamed;
 
 // Created on 1/12/2018 at 8:59 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
@@ -7,7 +7,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.Range;
 
 public class unnamed {
 

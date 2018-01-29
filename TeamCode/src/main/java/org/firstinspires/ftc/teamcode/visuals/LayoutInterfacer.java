@@ -1,6 +1,6 @@
-package org.firstinspires.ftc.teamcode.autonomous.visuals;
+package org.firstinspires.ftc.teamcode.visuals;
 
-// Created on 12/1/2017 at 12:16 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.autonomous.visuals
+// Created on 12/1/2017 at 12:16 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.visuals
 
 import android.app.Activity;
 import android.view.View;

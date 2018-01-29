@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.autonomous;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous;
 
 import android.view.View;
 import android.view.ViewGroup;
@@ -6,11 +6,10 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.autonomous.visuals.VisualsHandler;
+import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 
 // Created on 11/15/2017 at 7:47 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
