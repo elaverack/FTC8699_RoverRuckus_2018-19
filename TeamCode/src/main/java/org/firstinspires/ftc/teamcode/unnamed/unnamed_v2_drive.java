@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 // Created on 1/20/2018 at 1:31 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@TeleOp(name = "QUAL2", group = "test")
+@TeleOp(name = "unnamed drive", group = "test")
 //@Disabled
 public class unnamed_v2_drive extends OpMode {
 
