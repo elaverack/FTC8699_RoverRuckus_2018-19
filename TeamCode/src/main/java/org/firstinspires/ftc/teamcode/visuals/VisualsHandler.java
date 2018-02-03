@@ -29,6 +29,8 @@ import org.opencv.imgproc.Moments;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VisualsHandler {
 
@@ -67,13 +69,21 @@ public class VisualsHandler {
             SAT_H       = 255,
             VAL_L       = 160,
             VAL_H       = 255,
-            RESIZE_FACT = .25;
+            RESIZE_FACT = 1;
     private final static Scalar
             RED_L       = new Scalar(0,     SAT_L,  VAL_L),
             RED_H       = new Scalar(42.5,  SAT_H,  VAL_H),
             BLUE_L      = new Scalar(127.5, SAT_L,  VAL_L),
             BLUE_H      = new Scalar(198.3, SAT_H,  VAL_H);
     private final static Size JEWELS_BSIZE = new Size(4,4);
+    private final static String[] splitEnds = new String[]{
+            " red.png",
+            " green.png",
+            " blue.png",
+            " hue.png",
+            " sat.png",
+            " val.png"
+    };
     private final String PHOTO_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
 
 
@@ -101,6 +111,7 @@ public class VisualsHandler {
     public VisualsHandler(OpMode om, boolean doVuforiaPreview) {
         opmode = om;
         hasLight = opmode.hardwareMap.appContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+        //togglePhoneLight();
         vuforia = new VuforiaHandler(opmode,doVuforiaPreview);
         OpenCVLoader.initDebug();
         // Initialize preview
@@ -115,7 +126,7 @@ public class VisualsHandler {
         return (LinearLayout)((Activity)opmode.hardwareMap.appContext).findViewById(R.id.cameraMonitorViewId);
     }
     public ImageView getPreview() { return (ImageView)layout.getView(PREVIEW_ID); }
-    public void close() { layout.close(); }
+    public void close() { layout.close(); /*turnOffPhoneLight();*/ }
 
     public void togglePhoneLight () {
         if (!hasLight) return;
@@ -129,6 +140,13 @@ public class VisualsHandler {
         p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
         c.setParameters(p);
         light = true;
+    }
+    private void turnOffPhoneLight () {
+        if (!hasLight) return;
+        Camera c = Camera.open();
+        Camera.Parameters p = c.getParameters();
+        p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+        c.setParameters(p);
     }
 
     public void checkJewels() throws InterruptedException {
@@ -232,7 +250,7 @@ public class VisualsHandler {
         if (hor != 0) {
             hory += (int)(hor*10f);
             if (hory < 0) hory = 0;
-            if (hory > img.width()) hory = img.width();
+            if (hory > img.height()) hory = img.height();
             drawVert(img, vertx);
             drawHor(img, hory);
             setPreview(img);
@@ -258,6 +276,7 @@ public class VisualsHandler {
     public Mat takeMatPicture() throws InterruptedException { return BitmapToMat(fixBitmap(vuforia.takePicture())); }
 
     public Mat takeAndSavePic(String name) throws InterruptedException { Mat ret = takeMatPicture(); savePhoto(ret, name); return ret; }
+    public Mat takeSaveSplitPic(String name) throws InterruptedException { Mat ret = takeMatPicture(); saveSplitPhoto(ret, name); return ret; }
 
     public static Bitmap fixBitmap(Bitmap orig) {
         Matrix matrix = new Matrix();
@@ -277,6 +296,11 @@ public class VisualsHandler {
         Mat image = new Mat(orig.getHeight(), orig.getWidth(), CvType.CV_8UC3);
         Utils.bitmapToMat(orig, image);
         return image;
+    }
+    private static Bitmap MatToBitmap(Mat orig, Bitmap.Config type) {
+        Bitmap bmp = Bitmap.createBitmap(orig.width(), orig.height(), type);
+        Utils.matToBitmap(orig, bmp);
+        return bmp;
     }
 
     private static Mat generateIntro(int width) {
@@ -335,5 +359,69 @@ public class VisualsHandler {
 
     }
 
+    /**
+     * Take an image (mat), save it to the save directory, then split the rgb and hsv and save those to a folder.
+     * @param toSplit The image to save and split.
+     * @param filename The name of the image file (ENDING IN .PNG).
+     */
+    private void saveSplitPhoto (Mat toSplit, String filename) {
+
+        Bitmap bmp = Bitmap.createBitmap(toSplit.width(), toSplit.height(), Bitmap.Config.RGB_565);
+        Utils.matToBitmap(toSplit, bmp);
+
+        filename = filename.split(".png")[0];
+        File file = new File(PHOTO_DIRECTORY, filename + ".png");
+
+        if (file.exists()) {
+            int i = 2;
+            file = new File(PHOTO_DIRECTORY, filename + " (" + i + ").png");
+            while (file.exists()) { i++; file = new File(PHOTO_DIRECTORY, filename + " (" + i + ").png"); }
+            filename += "_(" + i + ")";
+        }
+
+        if (bmp != null) { // Save toSplit
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            bmp.compress(Bitmap.CompressFormat.PNG, 0, bos);
+            byte[] bitmapdata = bos.toByteArray();
+            try { FileOutputStream f = new FileOutputStream(file); f.write(bitmapdata); f.flush(); f.close(); }
+            catch (Exception e) { /* meh */ }
+        }
+
+        ArrayList<Mat> rgb = new ArrayList<>(), hsv = new ArrayList<>();
+        Core.split(toSplit, rgb);
+        Imgproc.cvtColor(toSplit, toSplit, Imgproc.COLOR_RGB2HSV_FULL);
+        Core.split(toSplit, hsv);
+
+        File split_dir = new File(PHOTO_DIRECTORY + filename + "_splits");
+        if (split_dir.isDirectory() && !split_dir.exists()) split_dir.mkdir();
+
+        for (int i = 0; i < 3; i++) {
+
+            Bitmap rgb_b = VisualsHandler.MatToBitmap(rgb.get(i), Bitmap.Config.RGB_565);
+            File rgb_f = new File(split_dir, filename + splitEnds[i]);
+            Bitmap hsv_b = VisualsHandler.MatToBitmap(hsv.get(i), Bitmap.Config.RGB_565);
+            File hsv_f = new File(split_dir, filename + splitEnds[i + 3]);
+
+            ByteArrayOutputStream rgb_bos = new ByteArrayOutputStream();
+            rgb_b.compress(Bitmap.CompressFormat.PNG, 0, rgb_bos);
+            try {
+                FileOutputStream f = new FileOutputStream(rgb_f);
+                f.write(rgb_bos.toByteArray());
+                f.flush();
+                f.close();
+            } catch (Exception e) { /* meh */ }
+
+            ByteArrayOutputStream hsv_bos = new ByteArrayOutputStream();
+            hsv_b.compress(Bitmap.CompressFormat.PNG, 0, hsv_bos);
+            try {
+                FileOutputStream f = new FileOutputStream(hsv_f);
+                f.write(hsv_bos.toByteArray());
+                f.flush();
+                f.close();
+            } catch (Exception e) { /* meh */ }
+
+        }
+        
+    }
 
 }

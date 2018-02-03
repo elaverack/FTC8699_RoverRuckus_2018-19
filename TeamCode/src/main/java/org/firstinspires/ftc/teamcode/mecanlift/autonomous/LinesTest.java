@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.mecanlift.autonomous;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -8,7 +9,7 @@ import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 
 // Created on 1/27/2018 at 4:42 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.autonomous
 
-@TeleOp(name = "Alignment Lines Test", group = "Iterative Opmode")
+@Autonomous(name = "Alignment Lines Test", group = "test")
 //@Disabled
 public class LinesTest extends OpMode {
 

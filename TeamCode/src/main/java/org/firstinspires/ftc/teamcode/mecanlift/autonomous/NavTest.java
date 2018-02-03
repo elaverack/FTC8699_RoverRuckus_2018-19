@@ -8,7 +8,7 @@ import org.firstinspires.ftc.teamcode.visuals.VuforiaHandler;
 
 // Created on 1/27/2018 at 3:22 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.autonomous
 
-@Autonomous(name = "Navigation Test", group = "Iterative Opmode")
+@Autonomous(name = "Navigation Test", group = "test")
 //@Disabled
 public class NavTest extends OpMode {
 

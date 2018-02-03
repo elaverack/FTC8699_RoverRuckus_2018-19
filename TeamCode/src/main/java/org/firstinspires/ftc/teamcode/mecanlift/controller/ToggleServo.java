@@ -18,12 +18,16 @@ public class ToggleServo {
 
     public void close () { s.setPosition(c); }
     public void open () { s.setPosition(o); }
-    public void toggle () { if (s.getPosition() == o) { close(); } else { open(); } }
+    public void toggle () { if (isOpened()) { close(); } else open(); }
+
+    public boolean isOpened () { return s.getPosition() == o; }
+    public void setOpen (boolean doopen) { if (doopen) {open();} else close(); }
 
     /** tob = toggle on button */
     public void tob (boolean button) {
-        if (button && !buttoned) { toggle(); buttoned = true; }
-        else if (!button && buttoned) buttoned = false;
+        if (!button && buttoned) { buttoned = false; return; }
+        if (!button) return;
+        if (!buttoned) { toggle(); buttoned = true; }
     }
 
     /** owb = open with button */
@@ -43,5 +47,7 @@ public class ToggleServo {
      * @param pos Value between 0 and 1, 0 being open and 1 being closed.
      */
     public void setPos (double pos) { s.setPosition(o + pos*(c - o)); }
+
+
 
 }

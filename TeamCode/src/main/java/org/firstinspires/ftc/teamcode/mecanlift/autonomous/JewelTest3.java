@@ -13,7 +13,7 @@ import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 
 // Created on 11/15/2017 at 7:47 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "Jewel Test 3", group = "test")
+@Autonomous(name = "Jewel Test 3 (2 but light)", group = "test")
 //@Disabled
 public class JewelTest3 extends LinearOpMode {
 
@@ -32,7 +32,7 @@ public class JewelTest3 extends LinearOpMode {
         button.setText("Capture");
         button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) { try { vh.takeAndSavePic("jt2_pic.png"); } catch (InterruptedException e) {/*meh*/} }
+            public void onClick(View v) { try { vh.takeAndSavePic("jt3_pic.png"); } catch (InterruptedException e) {/*meh*/} }
         });
         button.setId(BUTTON_ID);
         button.setLayoutParams(new LinearLayout.LayoutParams(

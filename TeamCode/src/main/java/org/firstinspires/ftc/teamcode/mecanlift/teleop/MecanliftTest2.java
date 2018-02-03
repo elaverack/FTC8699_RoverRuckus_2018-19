@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 // Created on 1/29/2018 at 3:41 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.teleop
 
-@TeleOp(name = "Mecanlift Test 2", group = "Iterative Opmode")
+@TeleOp(name = "Mecanlift Test 2 (w/ control)", group = "test")
 //@Disabled
 public class MecanliftTest2 extends OpMode {
 
@@ -26,7 +26,7 @@ public class MecanliftTest2 extends OpMode {
     public void init_loop() {  }
 
     @Override
-    public void start() { robot.raiseArm(); runtime.reset(); }
+    public void start() { robot.start(); runtime.reset(); }
 
     @Override
     public void loop() {

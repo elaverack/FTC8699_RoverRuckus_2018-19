@@ -13,7 +13,7 @@ import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 
 // Created on 11/15/2017 at 7:47 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "Jewel Test", group = "test")
+@Autonomous(name = "Jewel Test (full)", group = "test")
 //@Disabled
 public class JewelTest extends LinearOpMode {
 

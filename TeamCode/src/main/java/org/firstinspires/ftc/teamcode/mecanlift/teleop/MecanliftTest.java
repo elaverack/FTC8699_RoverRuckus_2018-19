@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.mecanlift.teleop;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -11,8 +12,8 @@ import org.firstinspires.ftc.teamcode.mecanlift.controller.ToggleServo;
 
 // Created on 1/25/2018 at 2:35 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@TeleOp(name = "Mecanlift Test", group = "Iterative Opmode")
-//@Disabled
+@TeleOp(name = "Mecanlift Test (no control)", group = "test")
+@Disabled
 public class MecanliftTest extends OpMode {
 
     private static final double     // Grabber servo positions

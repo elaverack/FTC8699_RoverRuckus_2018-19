@@ -7,24 +7,23 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 public class Lift {
 
-    private DcMotor l;
-
     private static final int
             thres = 10,     // Threshold for encoders
 
-            lift0 = 0,      // Ground level
+            lift0 = 200,    // Ground level
             lift1 = 3000,   // 1 glyph (6in) high
             lift2 = 5330;   // 2 glyphs (1ft) high
-
     private static final double
-            liftS   = .55,  // Speed lift moves at when going to positions
+            liftS   = 1,    // Speed lift moves at when going to positions
             liftDS  = .25;  // Speed lift moves at when directly controlled
 
+    private DcMotor l;
     private boolean
             upd = false,
             gd = false,
             ddupd = false,
-            dddownd = false;
+            dddownd = false,
+            eGood = false;
 
     public Lift(DcMotor lift) {
         l = lift;
@@ -34,54 +33,25 @@ public class Lift {
     }
 
     public void start () {
-        if (lift0 == 0) return;
+        if (lift0 == 0) {eGood = true; return;}
         l.setTargetPosition(lift0);
         l.setPower(liftS);
         while (!update_encoders(l));
+        eGood = true;
     }
 
     // TODO: Add grounding code (and method)
     public void run (boolean up, boolean ground, boolean dd_up, boolean dd_down) {
 
-        if (!upd && up) {
-            switch (l.getTargetPosition()) {
-                case lift0:
-                    l.setTargetPosition(lift1); l.setPower(liftS);
-                    break;
-                case lift1:
-                    l.setTargetPosition(lift2); l.setPower(liftS);
-                    break;
-                case lift2:
-                    l.setTargetPosition(lift1); l.setPower(-liftS);
-                    break;
-            }
-            upd = true;
-        } else if (!up) upd = false;
+        do_up(up);
 
-        if (!gd && ground) { l.setTargetPosition(lift0); l.setPower(-liftS); gd = true; }
-        else if (!ground) gd = false;
+        do_ground(ground);
 
-        update_encoders(l);
+        update_encoders();
 
-        if (!ddupd && dd_up) {
-            l.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            l.setPower(liftDS);
-            ddupd = true;
-        } else if (ddupd && !dd_up) {
-            l.setPower(0);
-            ddupd = false;
-            l.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        }
+        do_ddup(dd_up);
 
-        if (!dddownd && dd_down) {
-            l.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            l.setPower(-liftDS);
-            dddownd = true;
-        } else if (dddownd && !dd_down) {
-            l.setPower(0);
-            dddownd = false;
-            l.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        }
+        do_dddown(dd_down);
 
     }
 
@@ -94,5 +64,72 @@ public class Lift {
         if (ret) m.setPower(0);
         return ret;
     }
+
+    private void update_encoders () {
+        if (eGood) return;
+        eGood = update_encoders(l);
+    }
+
+    private void do_up (boolean b) {
+        if (upd && !b) { upd = false; return; }
+        if (!b) return;
+        if (!upd) {
+            switch (l.getTargetPosition()) {
+                case lift0:
+                    l.setTargetPosition(lift1); l.setPower(liftS); eGood = false;
+                    break;
+                case lift1:
+                    l.setTargetPosition(lift2); l.setPower(liftS); eGood = false;
+                    break;
+                case lift2:
+                    l.setTargetPosition(lift1); l.setPower(-liftS); eGood = false;
+                    break;
+            }
+            upd = true;
+        }
+    }
+
+    private void do_ground (boolean b) {
+        if (gd && !b) { gd = false; return; }
+        if (!b) return;
+        if (!gd) { l.setTargetPosition(lift0); l.setPower(-liftS); eGood = false; gd = true; }
+    }
+
+    private void do_ddup (boolean b) {
+        if (ddupd && !b) {
+            l.setPower(0);
+            ddupd = false;
+            l.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            return;
+        }
+        if (!b) return;
+        if (!ddupd) {
+            l.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            l.setPower(liftDS);
+            ddupd = true;
+        }
+    }
+
+    private void do_dddown (boolean b) {
+        if (dddownd && !b) {
+            l.setPower(0);
+            dddownd = false;
+            l.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            return;
+        }
+        if (!b) return;
+        if (!dddownd) {
+            l.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            l.setPower(-liftDS);
+            dddownd = true;
+        }
+    }
+
+    public void setPosition (int pos) { l.setTargetPosition(pos); l.setPower(liftS); eGood = false; }
+    public void ground () { l.setTargetPosition(lift0); l.setPower(liftS); eGood = false; }
+    public void groundground () { l.setTargetPosition(0); l.setPower(.5); eGood = false; }
+    public void lift () { l.setTargetPosition(lift1); l.setPower(liftS); eGood = false; }
+    public boolean grounded () { return l.getTargetPosition() == lift0; }
+    public void waitForEncoders () { while (!update_encoders(l)); }
 
 }
