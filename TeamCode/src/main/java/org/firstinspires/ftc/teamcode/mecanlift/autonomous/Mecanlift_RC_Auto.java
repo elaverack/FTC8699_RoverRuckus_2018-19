@@ -14,31 +14,26 @@ public class Mecanlift_RC_Auto extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Mecanlift robot;
-    private final Mecanlift.FIELDPOS pos = Mecanlift.FIELDPOS.RED_CORNER;
+    //private final Mecanlift.FIELDPOS pos = Mecanlift.FIELDPOS.BLUE_CORNER;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        robot = new Mecanlift(this, Mecanlift.Color.RED);
+        robot = new Mecanlift(this, Mecanlift.Color.RED, Mecanlift.Position.CORNER);
 
         telemetry.addData("Status", "Align vert. line with edge of jewel and hor. line with bottom of vumark.");
         telemetry.update();
         while (!isStarted()) { robot.showAligning(); }
         runtime.reset();
 
-        robot.doJewels();
-        runtime.reset();
-        while (runtime.seconds() < 3);
-        robot.turnToBox(pos);
-        while (runtime.seconds() < 3);
-        robot.driveToBox(pos);
+        robot.doParkAutonomous(this);
 
         while (opModeIsActive()) {
             telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
             telemetry.update();
         }
 
-        robot.closeVisuals();
+        //robot.closeVisuals();
 
     }
 }

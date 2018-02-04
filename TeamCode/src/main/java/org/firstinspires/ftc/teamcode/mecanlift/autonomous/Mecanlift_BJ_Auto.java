@@ -8,9 +8,9 @@ import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 // Created on 2/3/2018 at 12:41 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.autonomous
 
-@Autonomous(name = "QUAL_RS_AUTO", group = "Iterative Opmode")
+@Autonomous(name = "QUAL_BJ_AUTO", group = "Iterative Opmode")
 //@Disabled
-public class Mecanlift_RS_Auto extends LinearOpMode {
+public class Mecanlift_BJ_Auto extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Mecanlift robot;
@@ -19,7 +19,7 @@ public class Mecanlift_RS_Auto extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        robot = new Mecanlift(this, Mecanlift.Color.RED, Mecanlift.Position.SIDE);
+        robot = new Mecanlift(this, Mecanlift.Color.BLUE, Mecanlift.Position.JEWEL_ONLY);
 
         telemetry.addData("Status", "Align vert. line with edge of jewel and hor. line with bottom of vumark.");
         telemetry.update();
