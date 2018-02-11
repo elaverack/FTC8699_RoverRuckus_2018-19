@@ -33,7 +33,7 @@ public class Mecanlift_BJ_Auto extends LinearOpMode {
             telemetry.update();
         }
 
-        //robot.closeVisuals();
+        robot.closeVisuals();
 
     }
 }

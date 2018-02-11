@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
 
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,9 +13,9 @@ import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 
 // Created on 11/15/2017 at 7:47 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "Jewel Test 4 (3 but split)", group = "test")
+@Autonomous(name = "Jewel Test 2 (save pics)", group = "test")
 //@Disabled
-public class JewelTest4 extends LinearOpMode {
+public class JewelTest2 extends LinearOpMode {
 
     private static final int BUTTON_ID = 3141592;
 
@@ -32,15 +32,13 @@ public class JewelTest4 extends LinearOpMode {
         button.setText("Capture");
         button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) { try { vh.takeSaveSplitPic("jt4_pic.png"); } catch (InterruptedException e) {/*meh*/} }
+            public void onClick(View v) { try { vh.takeAndSavePic("jt2_pic.png"); } catch (InterruptedException e) {/*meh*/} }
         });
         button.setId(BUTTON_ID);
         button.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         vh.layout.createViews(button);
-
-        vh.togglePhoneLight();
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -51,7 +49,6 @@ public class JewelTest4 extends LinearOpMode {
             // This is the time during which I can press the button and take pictures.
             //  Nothing needs to be done by the opmode.
 
-        vh.togglePhoneLight();
         vh.close();
 
     }

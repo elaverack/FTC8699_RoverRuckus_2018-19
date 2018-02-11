@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.vuforia.CameraDevice;
 
 import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
 import org.firstinspires.ftc.teamcode.R;
@@ -70,11 +71,14 @@ public class VisualsHandler {
             VAL_L       = 160,
             VAL_H       = 255,
             RESIZE_FACT = 1;
+    private final float lines_delta = 50f, circlexy_delta = 50f, circler_delta = 10f;
     private final static Scalar
             RED_L       = new Scalar(0,     SAT_L,  VAL_L),
             RED_H       = new Scalar(42.5,  SAT_H,  VAL_H),
             BLUE_L      = new Scalar(127.5, SAT_L,  VAL_L),
-            BLUE_H      = new Scalar(198.3, SAT_H,  VAL_H);
+            BLUE_H      = new Scalar(198.3, SAT_H,  VAL_H),
+            RED_C       = new Scalar(255,0,0), 
+            BLUE_C      = new Scalar(0,0,255);
     private final static Size JEWELS_BSIZE = new Size(4,4);
     private final static String[] splitEnds = new String[]{
             " red.png",
@@ -88,6 +92,9 @@ public class VisualsHandler {
 
 
     public int vertx = 20, hory = 20;
+    public AlignmentCircle 
+            red = new AlignmentCircle(new Point(20,20), 50), 
+            blue = new AlignmentCircle(new Point(200,20), 50);
 
     public VuforiaHandler vuforia;
     public LayoutInterfacer layout;
@@ -110,7 +117,7 @@ public class VisualsHandler {
     }
     public VisualsHandler(OpMode om, boolean doVuforiaPreview) {
         opmode = om;
-        hasLight = opmode.hardwareMap.appContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+        //hasLight = opmode.hardwareMap.appContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
         //togglePhoneLight();
         vuforia = new VuforiaHandler(opmode,doVuforiaPreview);
         OpenCVLoader.initDebug();
@@ -126,9 +133,11 @@ public class VisualsHandler {
         return (LinearLayout)((Activity)opmode.hardwareMap.appContext).findViewById(R.id.cameraMonitorViewId);
     }
     public ImageView getPreview() { return (ImageView)layout.getView(PREVIEW_ID); }
-    public void close() { layout.close(); /*turnOffPhoneLight();*/ }
+    public void close() { layout.close(); phoneLightOff(); }
 
-    public void togglePhoneLight () {
+    public static void phoneLightOn () { CameraDevice.getInstance().setFlashTorchMode(true); }
+    public static void phoneLightOff () { CameraDevice.getInstance().setFlashTorchMode(false); }
+    @Deprecated public void togglePhoneLight () {
         if (!hasLight) return;
         Camera c = Camera.open();
         Camera.Parameters p = c.getParameters();
@@ -141,7 +150,7 @@ public class VisualsHandler {
         c.setParameters(p);
         light = true;
     }
-    private void turnOffPhoneLight () {
+    @Deprecated private void turnOffPhoneLight () {
         if (!hasLight) return;
         Camera c = Camera.open();
         Camera.Parameters p = c.getParameters();
@@ -240,7 +249,7 @@ public class VisualsHandler {
         Mat img = new Mat();
         Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
         if (vert != 0) {
-            vertx += (int)(vert*10f);
+            vertx += (int)(vert*lines_delta);
             if (vertx < 0) vertx = 0;
             if (vertx > img.width()) vertx = img.width();
             drawVert(img, vertx);
@@ -248,13 +257,70 @@ public class VisualsHandler {
             setPreview(img);
         }
         if (hor != 0) {
-            hory += (int)(hor*10f);
+            hory += (int)(hor*lines_delta);
             if (hory < 0) hory = 0;
             if (hory > img.height()) hory = img.height();
             drawVert(img, vertx);
             drawHor(img, hory);
             setPreview(img);
         }
+    }
+    public void showAlignmentCircles () {
+        Mat img = new Mat();
+        try {
+            Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+        } catch (InterruptedException e) {}
+        red.draw(img, RED_C);
+        blue.draw(img, BLUE_C);
+        setPreview(img);
+    }
+    public void tryAlignmentCircles (float redx, float redy, float redr, float bluex, float bluey, float bluer) {
+        if (redx == 0 && redy == 0 && redr == 0 && bluex == 0 && bluey == 0 && bluer == 0) return;
+        Mat img = new Mat();
+        try {
+            Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+        } catch (InterruptedException e) {}
+        if (redx != 0) {
+            red.center.x += (int)(redx*circlexy_delta);
+            if (red.center.x < 0) red.center.x = 0;
+            if (red.center.x > img.width()) red.center.x = img.width();
+            red.draw(img, RED_C);
+            blue.draw(img, BLUE_C);
+        }
+        if (redy != 0) {
+            red.center.y += (int)(redy*circlexy_delta);
+            if (red.center.y < 0) red.center.y = 0;
+            if (red.center.y > img.height()) red.center.y = img.height();
+            red.draw(img, RED_C);
+            blue.draw(img, BLUE_C);
+        }
+        if (redr != 0) {
+            red.radius += (int)(redr*circler_delta);
+            if (red.radius < 1) red.radius = 1;
+            red.draw(img, RED_C);
+            blue.draw(img, BLUE_C);
+        }
+        if (bluex != 0) {
+            blue.center.x += (int)(bluex*circlexy_delta);
+            if (blue.center.x < 0) blue.center.x = 0;
+            if (blue.center.x > img.width()) blue.center.x = img.width();
+            red.draw(img, RED_C);
+            blue.draw(img, BLUE_C);
+        }
+        if (bluey != 0) {
+            blue.center.y += (int)(bluey*circlexy_delta);
+            if (blue.center.y < 0) blue.center.y = 0;
+            if (blue.center.y > img.height()) blue.center.y = img.height();
+            red.draw(img, RED_C);
+            blue.draw(img, BLUE_C);
+        }
+        if (bluer != 0) {
+            blue.radius += (int)(bluer*circler_delta);
+            if (blue.radius < 1) blue.radius = 1;
+            red.draw(img, RED_C);
+            blue.draw(img, BLUE_C);
+        }
+        setPreview(img);
     }
 
     public static Point getCOM(Mat image, Scalar colorHigh, Scalar colorLow) {

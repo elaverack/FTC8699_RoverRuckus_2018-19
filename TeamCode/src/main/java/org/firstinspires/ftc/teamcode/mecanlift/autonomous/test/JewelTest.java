@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
 
 import android.view.View;
 import android.view.ViewGroup;

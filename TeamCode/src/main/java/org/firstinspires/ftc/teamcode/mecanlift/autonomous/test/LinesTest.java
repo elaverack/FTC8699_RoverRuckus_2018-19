@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 
 // Created on 1/27/2018 at 4:42 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.autonomous
 
-@Autonomous(name = "Alignment Lines Test", group = "test")
+@Autonomous(name = "Lines Test (set lines)", group = "test")
 //@Disabled
 public class LinesTest extends OpMode {
 
@@ -19,6 +19,7 @@ public class LinesTest extends OpMode {
     @Override
     public void init() {
         visuals = new VisualsHandler(this, false);
+        VisualsHandler.phoneLightOn();
         telemetry.addData("Status", "Initialized");
     }
 
@@ -37,6 +38,6 @@ public class LinesTest extends OpMode {
     }
 
     @Override
-    public void stop() { visuals.close(); }
+    public void stop() { visuals.close(); VisualsHandler.phoneLightOff(); }
 
 }

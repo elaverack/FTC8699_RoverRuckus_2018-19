@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
 
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,7 +40,7 @@ public class JewelTest3 extends LinearOpMode {
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         vh.layout.createViews(button);
 
-        vh.togglePhoneLight();
+        VisualsHandler.phoneLightOn();
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();

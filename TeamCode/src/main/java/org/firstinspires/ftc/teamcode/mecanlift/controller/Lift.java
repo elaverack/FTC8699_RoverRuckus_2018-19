@@ -7,9 +7,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 public class Lift {
 
+    public static final int
+            thres = 10;     // Threshold for encoders
     private static final int
-            thres = 10,     // Threshold for encoders
-
             lift0 = 200,    // Ground level
             lift1 = 3000,   // 1 glyph (6in) high
             lift2 = 5330;   // 2 glyphs (1ft) high

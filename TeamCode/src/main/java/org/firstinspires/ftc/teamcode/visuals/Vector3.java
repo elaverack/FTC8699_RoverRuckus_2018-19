@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.visuals;
 
 // Created on 1/27/2018 at 3:41 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.visuals
 
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
@@ -22,6 +24,21 @@ public class Vector3 {
     public float rx() { return round(x); }
     public float ry() { return round(y); }
     public float rz() { return round(z); }
+
+    public void mmToInches() {
+        x /= 25.4f;
+        y /= 25.4f;
+        z /= 25.4f;
+    }
+    public void inchesToMm() {
+        x *= 25.4f;
+        y *= 25.4f;
+        z *= 25.4f;
+    }
+
+    public void teleout (OpMode opmode, String caption) {
+        opmode.telemetry.addData(caption, String.format("x: %1$s, y: %2$s, z: %3$s", rx(), ry(), rz() ));
+    }
 
     public static Vector3 sum(Vector3... vectors) {
         if (vectors.length < 2) return vectors[0];

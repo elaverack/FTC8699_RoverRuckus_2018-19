@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 @TeleOp(name = "QUAL_DRIVE", group = "Iterative Opmode")
 //@Disabled
-public class MecanliftTest2 extends OpMode {
+public class MecanliftDrive extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Mecanlift robot;

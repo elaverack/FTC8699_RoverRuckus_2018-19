@@ -5,6 +5,7 @@ package org.firstinspires.ftc.teamcode.visuals;
 import android.graphics.Bitmap;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.vuforia.Image;
 import com.vuforia.PIXEL_FORMAT;
 import com.vuforia.Vuforia;
@@ -101,6 +102,12 @@ public class VuforiaHandler {
 
         return new PosRot(pose);
     }
+    public PosRot getRelPosWithAverage (double seconds) {
+        PosRot ret = getRelativePosition();
+        ElapsedTime time = new ElapsedTime();
+        while (time.seconds() < seconds) ret.doAverage(getRelativePosition());
+        return ret;
+    }
     public void tellDriverRelPos(PosRot pr) {
         op.telemetry.addData("pos", String.format("x: %1$s, y: %2$s, z: %3$s",
                 pr.position.rx(),
@@ -122,6 +129,10 @@ public class VuforiaHandler {
         public PosRot(OpenGLMatrix pose) {
             position = new Vector3(pose.getTranslation());
             rotation = new Vector3(Orientation.getOrientation(pose, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES));
+        }
+        public void doAverage (PosRot pr) {
+            position = Vector3.average(position, pr.position);
+            rotation = Vector3.average(rotation, pr.rotation);
         }
     }
 
