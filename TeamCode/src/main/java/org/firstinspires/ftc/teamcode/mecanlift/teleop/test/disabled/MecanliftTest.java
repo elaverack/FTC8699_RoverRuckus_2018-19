@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.teleop.test;
+package org.firstinspires.ftc.teamcode.mecanlift.teleop.test.disabled;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;

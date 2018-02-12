@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test.movement.disabled;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -6,12 +6,13 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
+import org.firstinspires.ftc.teamcode.visuals.Vector3;
 
-// Created on 2/10/2018 at 11:52 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.autonomous.test
+// Created on 2/8/2018 at 9:11 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.autonomous.test
 
-@Autonomous(name = "Rotate Test (90)", group = "test")
-//@Disabled
-public class RotateTest extends LinearOpMode {
+@Autonomous(name = "Drift Test (1ft)", group = "test")
+@Disabled
+public class DriftTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Mecanlift robot;
@@ -27,14 +28,15 @@ public class RotateTest extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        robot.turnToAngle(90,true, .5f);
-        runtime.reset();
-        while (runtime.seconds() < 3);
-        int theta = robot.theta();
+        Vector3 drift = robot.driveDistanceDrift(12.0);
 
         while (opModeIsActive()) {
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            telemetry.addData("theta", theta);
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.addData("Drift", String.format("x: %1$s, y: %2$s, z: %3$s",
+                    drift.rx(),
+                    drift.ry(),
+                    drift.rz()
+            ));
             telemetry.update();
         }
 

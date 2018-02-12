@@ -16,7 +16,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
 import org.firstinspires.ftc.teamcode.visuals.Vector3;
 import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 import org.firstinspires.ftc.teamcode.visuals.VuforiaHandler;
-import org.opencv.core.Mat;
 import org.opencv.core.Point;
 
 import static org.firstinspires.ftc.teamcode.visuals.Vector3.round;
@@ -26,7 +25,7 @@ public class Mecanlift {
     /** ENUMS */
     /** COLOR ENUM FOR JEWELS */
     public enum Color {
-        RED, BLUE, ERROR;
+        RED, BLUE, ERROR, RED_PARK, BLUE_PARK;
         public static Color readCS (ColorSensor s) {
             if (s.red() > s.blue()) return RED;
             if (s.blue() > s.red()) return BLUE;
@@ -40,7 +39,7 @@ public class Mecanlift {
             }
         }
         public boolean isBoxToLeft () {
-            switch (this) {
+            switch (removePark()) {
                 case RED: return false;
                 case BLUE: return true;
                 default: return false;
@@ -53,11 +52,20 @@ public class Mecanlift {
                 default: return 0;
             }
         }
+        public boolean parkAuto() { return this == RED_PARK || this == BLUE_PARK; }
+        public Color removePark() {
+            if (!parkAuto()) return this;
+            switch (this) {
+                case RED_PARK: return RED;
+                case BLUE_PARK: return BLUE;
+                default: return ERROR;
+            }
+        }
     }
 
     /** POSITION ENUM FOR PARKING */
     public enum Position {
-        SIDE, CORNER, JEWEL_ONLY, ERROR;
+        SIDE, CORNER, JEWEL_ONLY, PARK, ERROR;
         public boolean justDoJewel() { return this == JEWEL_ONLY; }
         public int toID () {
             switch (this) {
@@ -67,7 +75,7 @@ public class Mecanlift {
             }
         }
         public int getParkingAngle (Color allianceColor) {
-            switch (this.toID() + allianceColor.toID()) {
+            switch (this.toID() + allianceColor.removePark().toID()) {
                 case corner_id + red_id: return rcp_turn_angle;
                 case side_id + red_id: return rsp_turn_angle;
                 case corner_id + blue_id: return bcp_turn_angle;
@@ -107,9 +115,9 @@ public class Mecanlift {
                 case RIGHT: column_adjustment -= column_adjustment_inches;
             }
             switch (alliancePositionID) {
-                case corner_id + red_id:    return ret+column_adjustment;
-                case side_id + red_id:      ret -= mark_offset_inches; return -ret-column_adjustment;
-                case corner_id + blue_id:   return column_adjustment-ret;
+                case corner_id + red_id:    return ret+column_adjustment-phone_glyph_offset;
+                case side_id + red_id:      ret -= mark_offset_inches; return -ret-column_adjustment; // TODO: UPDATE RS AND BS WITH PHONE OFFSET
+                case corner_id + blue_id:   return column_adjustment-ret-phone_glyph_offset;
                 case side_id + blue_id:     ret += mark_offset_inches; return ret-column_adjustment;
                 default:                    return 0;
             }
@@ -146,15 +154,10 @@ public class Mecanlift {
             jewelArm_down = .2,    // The jewel servo position for lowering the arm
             jewelArm_up = 1,        // The jewel servo position for raising the arm
 
-            flip_power = .5,        // Power of the flipping motor
-    // TODO: Add two movements to flipping action, one fast and long, the other short but slow
-
             sp_distance = 36.0,     // Distance in inches to drive in order to park from side position
             cp_distance = 32.8;     // Distance in inches to drive in order to park from corner position
 
     private static final int
-            nflipped_pos = 0,       // Position of rotational motor when not flipped
-            flipped_pos = 5100,     // Position of rotational motor when flipped
             flip_position = 1000,   // Position of lift when flipping from ground position
 
             alignment_x = 455,      // Horizontal position of the vertical alignment line
@@ -183,7 +186,9 @@ public class Mecanlift {
     private static final float      // Based off notes from 020618
             box_start_inches = 36f,
             mark_offset_inches = 10.5f,
-            column_adjustment_inches = 7.63f;
+            column_adjustment_inches = 7.63f,
+            phone_glyph_offset = 3.95f,
+            z_off_balance = 54f;
 
     private static final String
             drive_rfN = "rf",       // The front right motor name
@@ -217,14 +222,7 @@ public class Mecanlift {
 
     /** GRABBER */
     private ToggleServo tl, tr, bl, br;
-    private DcMotor rot;
-    private boolean
-            flipped = false,    // Boolean to determine whether the grabber is flipped or not
-            rotated = false,    // Boolean for rotating button logic
-            rotating = false,   // Boolean to determine whether or not we are currently rotating the grabber
-            fixing = false,     // Boolean to determine whether or not we are currently fixing the grabber
-            fixed = false,      // Boolean for fixing button logic
-            lifted = false;     // Boolean to determine whether or not the lift has gone up a little bit for rotating
+    private Rotater rot;
 
     /** LIFT */
     private Lift lift;
@@ -244,7 +242,7 @@ public class Mecanlift {
     private Color allianceColor;
     private Position alliancePosition;
     private Column keyColumn = Column.ERROR;
-    private VuforiaHandler.PosRot lastKnownPos;
+    public VuforiaHandler.PosRot lastKnownPos;
 
     /** INITIALIZERS */
     public Mecanlift (OpMode om) { init(om, false, Color.ERROR, Position.ERROR); } // USE IF TELEOP
@@ -278,10 +276,7 @@ public class Mecanlift {
         br = new ToggleServo(opmode.hardwareMap.servo.get(grabber_brN), bro, brc);
         tl = new ToggleServo(opmode.hardwareMap.servo.get(grabber_tlN), tlo, tlc);
         tr = new ToggleServo(opmode.hardwareMap.servo.get(grabber_trN), tro, trc);
-        rot = opmode.hardwareMap.dcMotor.get(grabber_rotN);
-        rot.setDirection(DcMotorSimple.Direction.REVERSE);
-        rot.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rot = new Rotater(opmode.hardwareMap.dcMotor.get(grabber_rotN), lift);
 
         /** JEWEL ARM */
         jewelArm = opmode.hardwareMap.servo.get(jewelN);
@@ -299,13 +294,14 @@ public class Mecanlift {
             visuals.blue.radius = circle_radius;
             VisualsHandler.phoneLightOn();
             visuals.showAlignmentCircles();
+            activateVuforia();
             time = new ElapsedTime();
 
             /** SENSORS */
             jewelSensor = (ModernRoboticsI2cColorSensor)opmode.hardwareMap.colorSensor.get(colorN);
-            jewelSensor.enableLed(true);
+            csLightOn();
 
-        } else { opmode.hardwareMap.colorSensor.get(colorN).enableLed(false); }
+        } else csLightOff();
     }
 
     public void calibrateGyro () {
@@ -316,24 +312,47 @@ public class Mecanlift {
         }
     }
     public int theta() { return gyro.getHeading(); }
+    public int specialTheta() {
+        int theta = theta();
+        if (theta > 180) theta -= 360;
+        return theta;
+    }
+
+    public void csLightOff() { opmode.hardwareMap.colorSensor.get(colorN).enableLed(false); }
+    public void csLightOn() { opmode.hardwareMap.colorSensor.get(colorN).enableLed(true); }
 
     @Deprecated public Mecanlift (OpMode om, /*boolean auto,*/ Color allianceColor) { init(om, true, allianceColor, Position.ERROR); }
 
     /** INIT LOOP METHODS */
     public void showAligning () { if (((int)(time.seconds()%2) == 1)) visuals.showAlignmentCircles(); }
+    private boolean gotem = false;
+    public void doFullInitLoop () {
+        showAligning();
+        opmode.telemetry.addData("Seeing?", checkColumn());
+        opmode.telemetry.update();
+        VuforiaHandler.PosRot pr = visuals.vuforia.getRelativePosition();
+        if (pr.position.z != 0 && lastKnownPos == null) {
+            lastKnownPos = pr;
+            gotem = true;
+        } else if (pr.position.z != 0) {
+            lastKnownPos.doAverage(pr);
+        } else if (gotem) {
+            lastKnownPos = null; gotem = false;
+        }
+    }
 
     /** START METHODS */
     public void start () { raiseArm(); bl.open(); br.open(); tl.open(); tr.open(); lift.start(); }
 
     /** LOOP METHODS */
-    public void drive() { // Assuming default controls as of 1/28
+    public void drive() { // New controls of 2/12
 
         /** LIFT */
-        lift.run(opmode.gamepad1.dpad_up, opmode.gamepad1.dpad_down, opmode.gamepad1.y, opmode.gamepad1.x);
+        lift.run(lift_pos_tog(), lift_ground(), lift_direct_drive_up(), lift_direct_drive_down());
 
         /** GRABBER */
-        boolean a = opmode.gamepad1.a, b = opmode.gamepad1.b;
-        if (!flipped) {
+        boolean a = toggle_bottom(), b = toggle_top();
+        if (!rot.flipped) {
             bl.tob(a);
             br.tob(a);
             tl.tob(b);
@@ -344,8 +363,8 @@ public class Mecanlift {
             tl.tob(a);
             tr.tob(a);
         }
-        doRotation(opmode.gamepad1.right_stick_button);
-        doRotFix(opmode.gamepad1.right_bumper && opmode.gamepad1.left_bumper);
+        rot.doRotation(flip_grabber());
+        rot.doRotFix(fix_rotate());
 
         /** MECANUM WHEELS */
         float
@@ -391,7 +410,8 @@ public class Mecanlift {
             ));
         }
     }
-    public void drive(
+
+    @Deprecated public void drive(
             boolean liftUp, boolean liftDown, boolean liftDirectUp, boolean liftDirectDown,
             boolean bottomToggle, boolean topToggle, boolean rot, boolean fixRot,
             float straight, float strafe, float rotate, boolean slow, boolean quickR) {
@@ -399,7 +419,7 @@ public class Mecanlift {
         lift.run(liftUp, liftDown, liftDirectUp, liftDirectDown);
 
         /** GRABBER */
-        if (flipped) {
+        if (this.rot.flipped) {
             bl.tob(topToggle);
             br.tob(topToggle);
             tl.tob(bottomToggle);
@@ -410,8 +430,8 @@ public class Mecanlift {
             tl.tob(topToggle);
             tr.tob(topToggle);
         }
-        doRotation(rot);
-        doRotFix(fixRot);
+        this.rot.doRotation(rot);
+        this.rot.doRotFix(fixRot);
 
         /** MECANUM WHEELS */
         powerRF = straight;
@@ -437,7 +457,7 @@ public class Mecanlift {
         rf.setPower(powerRF);
         rb.setPower(powerRB);
     }
-    public void drive(
+    @Deprecated public void drive(
             boolean liftUp, boolean liftDown, boolean liftDirectUp, boolean liftDirectDown,
             float brPos, float blPos, float trPos, float tlPos, boolean rot, boolean fixRot,
             float straight, float strafe, float rotate, boolean slow, boolean quickR) {
@@ -450,8 +470,8 @@ public class Mecanlift {
         br.setPos(brPos);
         tl.setPos(tlPos);
         tr.setPos(trPos);
-        doRotation(rot);
-        doRotFix(fixRot);
+        this.rot.doRotation(rot);
+        this.rot.doRotFix(fixRot);
 
         /** MECANUM WHEELS */
         powerRF = straight;
@@ -491,7 +511,7 @@ public class Mecanlift {
         lift.stop();
 
         /** GRABBER */
-        rot.setPower(0);
+        rot.stop();
 
     }
     public void closeVisuals () { visuals.close(); }
@@ -528,169 +548,328 @@ public class Mecanlift {
         }
     }
 
-    /** ROTATION */
-    private void doRotation (boolean b) {
-        if (rotating) {
-            if (Lift.update_encoders(rot)) { // Done rotating
-                rotating = false;
-                flipped = !flipped;
-                if (lifted) { lift.ground(); lifted = false; }
-                return;
-            } else return;
-        }
-        if (rotated && !b) { rotated = false; }
-        if (!b) return;
-        if (!rotated) { // Start rotating
-            if (lift.grounded()) { lifted = true; lift.setPosition(flip_position); }
-            if (flipped) {
-                rot.setTargetPosition(nflipped_pos);
-                rot.setPower(flip_power);
-            } else {
-                rot.setTargetPosition(flipped_pos);
-                rot.setPower(flip_power);
-            }
-            rotating = true;
-        }
+    /** GAMEPADS */
+//    gamepad 1:
+//    UP			        : lift pos. toggle
+//    DOWN			        : lift ground
+//    RIGHT+RB		        : fix rotater
+//    LT			        : toggle bottom
+//    LB			        : toggle top
+//    LJOY			        : rotation
+//    LJOYBUTTON		    : turn around
+//    RJOY			        : movement
+//    RJOYBUTTON		    : flip grabber
+//    RT			        : slow down
+//    Y			            : lift direct drive up
+//    X			            : lift direct drive down
+//    B			            : toggle top
+//    A			            : toggle bottom
+//
+//    gamepad 2:
+//    UP			        : lift pos. toggle
+//    DOWN			        : lift ground
+//    RIGHT+RT		        : fix rotater
+//    LT			        : lift direct drive down
+//    LB			        : lift direct drive up
+//    LJOYBUTTON+RJOYBUTTON	: set lift ground position
+//    RB			        : flip grabber
+//    Y			            : na
+//    X			            : na
+//    B			            : toggle top
+//    A			            : toggle bottom
+    private boolean[]
+            lpt     = new boolean[]{false, false}, // lift pos tog
+            lg      = new boolean[]{false, false}, // lift ground
+            fr      = new boolean[]{false, false}, // fix rotate
+            tb      = new boolean[]{false, false}, // toggle bottom
+            tt      = new boolean[]{false, false}, // toggle top
+            fg      = new boolean[]{false, false}; // flip grabber
+    private boolean lift_pos_tog () {
+        if (opmode.gamepad1.dpad_up && !lpt[0]) {
+            lpt[0] = true;
+            return true;
+        } else if (!opmode.gamepad1.dpad_up && lpt[0]) lpt[0] = false;
+        if (opmode.gamepad2.dpad_up && !lpt[1]) {
+            lpt[1] = true;
+            return true;
+        } else if (!opmode.gamepad2.dpad_up && lpt[1]) lpt[1] = false;
+        return false;
     }
-    private void doRotFix (boolean b) {
-        if (fixing && Lift.update_encoders(rot)) {
-            rot.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            if (lifted) { lift.ground(); lifted = false; }
-            fixing = false;
-            return;
-        }
-        if (fixed && !b) { fixed = false; return; }
-        if (!b) return;
-        if (!fixed) {
-            if (lift.grounded()) { lifted = true; lift.setPosition(flip_position); }
-            rot.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            rot.setTargetPosition(-flipped_pos);
-            rot.setPower(-flip_power);
-            fixing = true;
-        }
+    private boolean lift_ground () {
+        if (opmode.gamepad1.dpad_down && !lg[0]) {
+            lg[0] = true;
+            return true;
+        } else if (!opmode.gamepad1.dpad_down && lg[0]) lg[0] = false;
+        if (opmode.gamepad2.dpad_down && !lg[1]) {
+            lg[1] = true;
+            return true;
+        } else if (!opmode.gamepad2.dpad_down && lg[1]) lg[1] = false;
+        return false;
     }
+    private boolean fix_rotate () {
+        if ((opmode.gamepad1.dpad_right && opmode.gamepad1.right_bumper) && !fr[0]) {
+            fr[0] = true;
+            return true;
+        } else if (!(opmode.gamepad1.dpad_right && opmode.gamepad1.right_bumper) && fr[0]) fr[0] = false;
+        if ((opmode.gamepad2.dpad_right && opmode.gamepad2.right_trigger > .5) && !fr[1]) {
+            fr[1] = true;
+            return true;
+        } else if (!(opmode.gamepad2.dpad_right && opmode.gamepad2.right_trigger > .5) && fr[1]) fr[1] = false;
+        return false;
+    }
+    private boolean toggle_bottom () {
+        if ((opmode.gamepad1.a || opmode.gamepad1.left_trigger > .4) && !tb[0]) {
+            tb[0] = true;
+            return true;
+        } else if (!(opmode.gamepad1.a || opmode.gamepad1.left_trigger > .4) && tb[0]) tb[0] = false;
+        if (opmode.gamepad2.a && !tb[1]) {
+            tb[1] = true;
+            return true;
+        } else if (!opmode.gamepad2.a && tb[1]) tb[1] = false;
+        return false;
+    }
+    private boolean toggle_top () {
+        if ((opmode.gamepad1.b || opmode.gamepad1.left_bumper) && !tt[0]) {
+            tt[0] = true;
+            return true;
+        } else if (!(opmode.gamepad1.b || opmode.gamepad1.left_bumper) && tt[0]) tt[0] = false;
+        if (opmode.gamepad2.b && !tt[1]) {
+            tt[1] = true;
+            return true;
+        } else if (!opmode.gamepad2.b && tt[1]) tt[1] = false;
+        return false;
+    }
+    private boolean flip_grabber () {
+        if (opmode.gamepad1.right_stick_button && !fg[0]) {
+            fg[0] = true;
+            return true;
+        } else if (!opmode.gamepad1.right_stick_button && fg[0]) fg[0] = false;
+        if (opmode.gamepad1.right_bumper && !fg[1]) {
+            fg[1] = true;
+            return true;
+        } else if (!opmode.gamepad1.right_bumper && fg[1]) fg[1] = false;
+        return false;
+    }
+    private boolean lift_direct_drive_up () { return opmode.gamepad1.y || opmode.gamepad2.left_bumper; }
+    private boolean lift_direct_drive_down () { return opmode.gamepad1.x || opmode.gamepad2.left_trigger > .5; }
 
     /** AUTONOMOUS */
     public void activateVuforia () { visuals.vuforia.start(); }
     public String keyColumn () { return keyColumn.toString(); }
-    public String checkColumn () { keyColumn = Column.look(visuals.vuforia); return keyColumn(); }
+    private String checkColumn () { keyColumn = Column.look(visuals.vuforia); return keyColumn(); }
 
-    public void wait(double seconds) {
+    @Deprecated private void wait(double seconds) {
         ElapsedTime time = new ElapsedTime();
         while (time.seconds() < seconds) ;
     }
+    private void wait(LinearOpMode opmode, double seconds) {
+        ElapsedTime time = new ElapsedTime();
+        while (time.seconds() < seconds) if (!opmode.opModeIsActive()) return;
+    }
 
-    public void doParkAutonomous (LinearOpMode opmode) {
+    private void doParkAutonomous (LinearOpMode opmode) {
         if (!opmode.opModeIsActive()) return;
-        doJewels();
-        if (alliancePosition.justDoJewel() || !opmode.opModeIsActive()) return;
+
+        telewithup("Status", "Doing jewels...");
+        doJewels(opmode);
+
+        if (alliancePosition.justDoJewel()) return;
+
+        telewithup("Status", "Parking...");
         doPark(opmode);
+
+        VisualsHandler.phoneLightOff();
+
+        while (opmode.opModeIsActive()) {
+            tele("Status", "Done.");
+            lastKnownPos.position.teleout(opmode, "Pos");
+            lastKnownPos.rotation.teleout(opmode, "Rot");
+            tele("Θ", specialTheta());
+            telewithup("Column", keyColumn());
+        }
+
         closeVisuals();
     }
 
-    public void doJewels () {
+    public void doFullAutonomous (LinearOpMode opmode) {
+        if (!opmode.opModeIsActive()) return;
+        if (allianceColor.parkAuto()) { doParkAutonomous(opmode); return; }
+
+        telewithup("Status", "Doing jewels...");
+        doJewels(opmode);
+
+        if (opmode.opModeIsActive() && alliancePosition == Position.CORNER) {
+            telewithup("Status", "Driving off balancing plate...");
+            driveOffBalance(opmode);
+
+            telewithup("Status", "Driving to cryptobox...");
+            driveToCryptobox(opmode);
+
+            telewithup("Status", "Placing glyph and parking...");
+            placeGlyph(opmode);
+        } else if (opmode.opModeIsActive() && alliancePosition == Position.SIDE) {
+
+
+
+        }
+
+        VisualsHandler.phoneLightOff();
+
+        while (opmode.opModeIsActive()) {
+            tele("Status", "Done.");
+            lastKnownPos.position.teleout(opmode, "Pos");
+            lastKnownPos.rotation.teleout(opmode, "Rot");
+            tele("Θ", specialTheta());
+            telewithup("Column", keyColumn());
+        }
+
+        closeVisuals();
+    }
+
+    @Deprecated private void doJewels () {
+        telewithup("Status", "Opening/closing/lowering everything...");
         br.close();
         bl.close();
         tr.open();
         tl.open();
         lowerArm();
+
         calibrateGyro();
+
+        telewithup("Status", "Reading color sensor...");
         Color jewelC = Color.readCS(jewelSensor);
-        if (jewelC == Color.ERROR) { raiseArm(); return; }
+
+        if (jewelC == Color.ERROR) { raiseArm(); telewithup("Status", "Couldn't read it..."); return; }
+
         if (allianceColor.turnCCW(jewelC)) {
+            telewithup("Status", "Turning left...");
             turnPastAngle(ccwAngle, true, .5f);
-        } else turnPastAngle(cwAngle, false, .5f);
+        } else {
+            telewithup("Status", "Turning right...");
+            turnPastAngle(cwAngle, false, .5f);
+        }
+        telewithup("Status", "Raising arm...");
         raiseArm();
+        telewithup("Status", "Completed doing jewel.");
+    }
+    private void doJewels (LinearOpMode opmode) {
+        if (!opmode.opModeIsActive()) return;
+
+        telewithup("Status", "Opening/closing/lowering everything...");
+        br.close();
+        bl.close();
+        tr.open();
+        tl.open();
+        lowerArm();
+
+        calibrateGyro();
+
+        telewithup("Status", "Reading color sensor...");
+        Color jewelC = Color.readCS(jewelSensor);
+
+        if (jewelC == Color.ERROR) { raiseArm(); telewithup("Status", "Couldn't read it..."); return; }
+
+        if (!opmode.opModeIsActive()) return;
+        if (allianceColor.turnCCW(jewelC)) {
+            telewithup("Status", "Turning left...");
+            turnPastAngle(ccwAngle, true, .5f);
+        } else {
+            telewithup("Status", "Turning right...");
+            turnPastAngle(cwAngle, false, .5f);
+        }
+        telewithup("Status", "Raising arm...");
+        raiseArm();
+        telewithup("Status", "Completed doing jewel.");
     }
 
-    public void doPark (LinearOpMode opmode) {
+    private void doPark (LinearOpMode opmode) {
         if (!opmode.opModeIsActive()) return;
         turnPastAngle(alliancePosition.getParkingAngle(allianceColor), allianceColor.isBoxToLeft(), .5f);
         if (!opmode.opModeIsActive()) return;
-        lift.lift();
+        lift.setPosition(flip_position);
         lift.waitForEncoders();
         driveDistance(alliancePosition.getParkingDistance());
         lift.groundground();
         lift.waitForEncoders();
     }
 
-    public VuforiaHandler.PosRot driveOffBalance (LinearOpMode opmode) {
-        if (!opmode.opModeIsActive()) return null;
+    private void driveOffBalance (LinearOpMode opmode) {
+        if (!opmode.opModeIsActive()) return;
 
+        telewithup("Status", "Opening/closing/raising everything...");
         br.close();
         bl.close();
         tr.open();
         tl.open();
-        raiseArm();
+        csLightOff();
+        raiseArm(); // Open/close/raise everything before driving off
 
-        turnToAngle(0,theta()>180,.33f);
+        telewithup("Status", "Getting straight and raising lift...");
+        lift.setPosition(flip_position); // Start raising the grabber before coming off so the glyph doesn't hit the ground
+        getStraight(); // Straighten up before driving off
 
-        //VuforiaHandler.PosRot pr = visuals.vuforia.getRelativePosition(); // check position before coming off
+        telewithup("Status", "Saving key column...");
         keyColumn = Column.look(visuals.vuforia); // store key column before coming off
+        if (keyColumn == Column.ERROR) {
+            telewithup("Status", "WARNING: COULD NOT SEE VUMARK!");
+            wait(opmode, 3);
+        }
 
-        lift.setPosition(flip_position);
-        lift.waitForEncoders();
+        telewithup("Status", "Waiting on lift...");
+        lift.waitForEncoders(); // Wait for the lift if its not completed
 
-        driveDistance(36);
-        //wait(1.0);
+        telewithup("Status", "Driving arbitrarily off plate...");
+        driveDistance(36); // Drive an arbitrary three feet off of plate
 
-        VuforiaHandler.PosRot pr = visuals.vuforia.getRelPosWithAverage(3);
-        //pr.position.z += 30; // About the error of the pose calculation
-        pr.position.mmToInches();
+        telewithup("Status", "Getting position...");
+        VuforiaHandler.PosRot pr = visuals.vuforia.getRelPosWithAverage(3); // Get position and average it for three seconds (for accuracy)
+        pr.position.mmToInches(); // Convert it to inches (reports in mm)
 
-        int starting_theta = theta();
+        if (Math.abs(pr.position.z) < z_off_balance) {
+            float d = z_off_balance - Math.abs(pr.position.z);
+            telewithup("Status", "Fixing Z " + Vector3.round(d) + " inches...");
+            if (d < 5) driveDistance(d, .3f);
+        }
 
-//        opmode.telemetry.addData("z_pos", Math.abs(pr.position.z));
-//        opmode.telemetry.update();
-//        wait(5.0);
-//        if (!opmode.opModeIsActive()) return null;
+        telewithup("Status", "Aligning to vumark...");
+        turnToSpecialAngle((int)lastKnownPos.rotation.y, .15f); // Align to pictograph to get good position
 
-//        double z_pos; // Make sure we are around 54 inches from pictograph
-//        if ((z_pos = Math.abs(pr.position.z)) < 54 && z_pos > 30) {
-//            opmode.telemetry.addData("Status", "Should be driving away.");
-//            opmode.telemetry.update();
-//            driveDistance(54.0 - z_pos, .2f);
-//        }
+        telewithup("Status", "Getting position...");
+        pr = visuals.vuforia.getRelPosWithAverage(3); // Get position and average it for three seconds (for accuracy)
+        pr.position.mmToInches(); // Convert it to inches (reports in mm)
+
+        int starting_theta = theta(); // Take note of the angle we start at before turning
 
         if (allianceColor == Color.BLUE) { // Rotate CCW if blue
-            int goal_theta = 90 - (int)(theta() + pr.rotation.y);
-            if (goal_theta < 0) goal_theta += 360;
-            goal_theta = 92;
-            opmode.telemetry.addData("Goal", goal_theta);
-            opmode.telemetry.update();
-            turnToAngle(goal_theta, true, .5f);
+            int goal_theta = specialTheta() + 90;
+            telewithup("Status", "Turning left to " + goal_theta + " degrees...");
+            turnToAngle(goal_theta, true, .33f);
             turnToAngle(goal_theta, false, .2f);
         }
 
         if (allianceColor == Color.RED) { // Rotate CW if red
-            int goal_theta = (int)(theta() + pr.rotation.y) - 90;
-            if (goal_theta < 0) goal_theta += 360;
-            goal_theta = 268;
-            opmode.telemetry.addData("Goal", goal_theta);
-            opmode.telemetry.update();
-            turnToAngle(goal_theta, false, .5f);
+            int goal_theta = specialTheta() + 270;
+            telewithup("Status", "Turning right to " + goal_theta + " degrees...");
+            turnToAngle(goal_theta, false, .33f);
             turnToAngle(goal_theta, true, .2f);
         }
 
-        int end_theta = theta();
-        int wall_theta = Math.round(pr.rotation.y);
+        int end_theta = theta(); // Our gyro angle after rotating
 
-        pr.position = Vector3.sum(pr.position, calcPhonePositionDelta(end_theta - starting_theta));
-        if (allianceColor == Color.BLUE) pr.rotation.x = ((90+wall_theta+starting_theta)-end_theta);
-        //wait(3.0);
+        Vector3 phoneD = calcPhonePositionDelta(end_theta - starting_theta); // Calculate phone delta (based off math from Mr. Riehm)
 
-        lastKnownPos = pr;
-        //lift.groundground();
-        return pr;
-        // drive off keeping an eye on the gyro and the vumark
-        // if the vumark goes out of sight, note that it does and use the encoders to guess distance
-        //      keep checking if it appears again, if not just base movements off of encoders
-        //      if it does, get pos data and position self about four and a half feet from it
+        tele("Status", "Calculated phone delta with difference of " + (end_theta - starting_theta) + " degrees.");
+        phoneD.teleout(opmode, "phone Δ");
+        teleup();
+
+        pr.position = Vector3.sum(pr.position, phoneD); // Add the change in the phones position to our position variable
+
+        pr.rotation.x = starting_theta; pr.rotation.y = lastKnownPos.rotation.y; pr.rotation.z = end_theta; // Store these for later use
+
+        lastKnownPos = pr; // Save the position from before into a variable for use later
 
     }
-    private static Vector3 calcPhonePositionDelta(int delta_theta) {
+    private static Vector3 calcPhonePositionDelta(float delta_theta) {
         return new Vector3(
                 5.23f*((float)Math.cos(Math.toRadians(39.4 + delta_theta)) - .7727f),
                 0,
@@ -698,45 +877,73 @@ public class Mecanlift {
         );
     }
 
-    public void driveToCryptobox (LinearOpMode opmode) {
+    private void driveToCryptobox (LinearOpMode opmode) {
         if (!opmode.opModeIsActive() || lastKnownPos == null) return;
+        VisualsHandler.phoneLightOff();
 
+        // Calculate the distance to drive straight (based on notes)
         double d = 0;
         if (allianceColor == Color.RED) d = 17.5 - lastKnownPos.position.x;
-        if (allianceColor == Color.BLUE) d = 32.5 + lastKnownPos.position.x;
+        if (allianceColor == Color.BLUE) d = 37.5 + lastKnownPos.position.x;
 
-//        opmode.telemetry.addData("x", lastKnownPos.position.x);
-//        opmode.telemetry.update();
-//        wait(3.0);
-
+        // Drive the distance, watching our angle and calculating drift
+        telewithup("Status", "Driving straight " + Vector3.round(((float)d)) + " inches...");
         Vector3 straightDrift = driveDistanceDrift(d);
 
+        // Update our position
+        tele("Status", "Updating position...");
+        straightDrift.teleout(opmode, "Drift");
+        teleup();
+        if (allianceColor == Color.BLUE) {
+//            int start = specialTheta();
+//            turnBackToSpecialAngle((int)lastKnownPos.rotation.y + 90, .15f);
+//            int end = specialTheta();
+//            lastKnownPos.position = Vector3.sum(lastKnownPos.position, calcPhonePositionDelta(end-start));
+            lastKnownPos.position.x -= d + straightDrift.x;
+            lastKnownPos.position.z += straightDrift.y;
+        }
+        if (allianceColor == Color.RED) {
+//            int start = specialTheta();
+//            turnBackToSpecialAngle((int)lastKnownPos.rotation.y + 270, .15f);
+//            int end = specialTheta();
+//            lastKnownPos.position = Vector3.sum(lastKnownPos.position, calcPhonePositionDelta(end-start));
+            lastKnownPos.position.x += d + straightDrift.x;
+            lastKnownPos.position.z -= straightDrift.y;
+        }
+
+        // Calculate the distance to strafe based on math from notes
+        telewithup("Status", "Calculating strafing distance...");
         d = keyColumn.inchesToColumnFromVumark(alliancePosition.toID() + allianceColor.toID());
         boolean right = d > 0;
-        d = Math.abs(lastKnownPos.position.z) - Math.abs(d) + 3;
-        if (allianceColor == Color.BLUE && alliancePosition == Position.CORNER && keyColumn == Column.LEFT) d += 6;
-        if (allianceColor == Color.BLUE && alliancePosition == Position.CORNER && keyColumn == Column.RIGHT) d -= 3;
+        d = Math.abs(lastKnownPos.position.z) - Math.abs(d);
 
+        // Add corrections from testing
+        if (allianceColor == Color.BLUE && alliancePosition == Position.CORNER) {
+            d += 3;
+            if (keyColumn == Column.LEFT) d += 6;
+        } else if (allianceColor == Color.RED && alliancePosition == Position.CORNER) {
+            d -= 1;
+            if (keyColumn == Column.LEFT) d -= 8;
+        }
+
+        // If we don't have pos data, let the drivers know and strafe a foot
+        if (lastKnownPos.position.z == 0) {
+            telewithup("WARNING", "There was no Z value. Guessing the distance to drive...");
+            d = 12;
+        }
+
+        // Strafe the distance
+        telewithup("Status", "Strafing " + Vector3.round(((float)d)) + " inches...");
         Vector3 strafeDrift = strafeDistanceDrift(d, right);
 
-        Vector3 s2drift = strafeDistanceDrift(straightDrift.y + 1, allianceColor == Color.BLUE);
+        // Update our position
+        lastKnownPos.position.z += d + strafeDrift.x;
+        lastKnownPos.position.x += strafeDrift.y;
 
-//        straightDrift.teleout(opmode, "straight");
-//        strafeDrift.teleout(opmode, "strafe");
-//        s2drift.teleout(opmode, "s2");
-//        opmode.telemetry.addData("Off by", lastKnownPos.rotation.x / 2);
-//        opmode.telemetry.update();
-//        wait(10.0);
-
-        //lift.groundground();
-        // using pos data, calculate turn angle and distance to drive to line up with box wall
-        // turn using the gyro such that the robot is facing the cryptobox
-        // drive the distance using the motor encoders while making sure we stay straight
-        // strafe the remaining distance based off of pos data so that the glyph is in front of the key column
-        // IF NEEDED: use the phones front camera to align further to the cryptobox
+        telewithup("Status", "Done driving to cryptobox...");
     }
 
-    public void placeGlyph (LinearOpMode opmode) {
+    private void placeGlyph (LinearOpMode opmode) {
         if (!opmode.opModeIsActive()) return;
 
         lift.ground();
@@ -751,13 +958,9 @@ public class Mecanlift {
 
         lift.groundground();
         lift.waitForEncoders();
-
-        // drive into the cryptobox, perhaps using an ultrasonic sensor to monitor the distance from the wall
-        // release glyph from grabber
-        // back away from cryptobox
     }
 
-    public void driveDistance (double inches) {
+    private void driveDistance (double inches) {
         int encoder = 1120 * (int)(inches/(Math.PI * 4.0));
         rf.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rb.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -781,7 +984,7 @@ public class Mecanlift {
         lf.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lb.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
-    public void driveDistance (double inches, float power) {
+    private void driveDistance (double inches, float power) {
         int encoder = (int)(1120 * (inches/(Math.PI * 4.0)));
         rf.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rb.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -821,9 +1024,6 @@ public class Mecanlift {
         lb.setTargetPosition(e_goal);
         int start_theta = gyro.getHeading(), last_e = 0, cur_e;
         Vector3 drift = new Vector3();
-//        opmode.telemetry.addData("goal", e_goal);
-//        opmode.telemetry.update();
-//        wait(2.0);
         setDrivePower(.5);
         while (!((cur_e = driveCurPosition()) < e_goal + Lift.thres && cur_e > e_goal - Lift.thres)) {
             int de = cur_e - last_e;
@@ -831,9 +1031,9 @@ public class Mecanlift {
             drift.x += (Math.PI * (float)de * Math.cos(Math.toRadians(dtheta)))/280f;
             drift.y += (Math.PI * (float)de * Math.sin(Math.toRadians(dtheta)))/280f;
             last_e = cur_e;
-            opmode.telemetry.addData("dx", drift.rx());
-            opmode.telemetry.addData("dy", drift.ry());
-            opmode.telemetry.update();
+            tele("Status", "Driving straight " + Vector3.round(((float)inches)) + " inches...");
+            tele("dx", drift.rx());
+            telewithup("dy", drift.ry());
         }
         setDrivePower(0);
         int de = driveCurPosition() - last_e;
@@ -921,6 +1121,9 @@ public class Mecanlift {
             int dtheta = gyro.getHeading() - start_theta;
             drift.x += ((float)de * Math.cos(Math.toRadians(dtheta)))/112f;
             drift.y += ((float)de * Math.sin(Math.toRadians(dtheta)))/112f;
+            tele("Status", "Strafing " + Vector3.round(((float)inches)) + " inches...");
+            tele("dx", drift.rx());
+            telewithup("dy", drift.ry());
             last_e = cur_e;
         }
         setDrivePower(0);
@@ -975,6 +1178,78 @@ public class Mecanlift {
         }
         setDrivePower(0);
     }
+    private void turnToSpecialAngle(int ang, float power) {
+//        ElapsedTime time = new ElapsedTime();
+//        while (time.seconds() < 3) {
+//            telewithup("CCW, theta", specialTheta());
+//        }
+        int theta = specialTheta();
+        if (ang > 180) ang -= 360;
+        if (theta < ang) { // CCW
+            rf.setPower(power);
+            rb.setPower(power);
+            while ((theta = specialTheta()) < ang) telewithup("CCW, theta", theta);
+            //setCWPower(power / 2f);
+            //while ((theta = specialTheta()) > ang) telewithup("CW, theta", theta);
+        } else if (theta > ang) { // CW
+            lf.setPower(power);
+            lb.setPower(power);
+            while ((theta = specialTheta()) > ang) telewithup("CW, theta", theta);
+            //setCCWPower(power / 2f);
+            //while ((theta = specialTheta()) < ang) telewithup("CCW, theta", theta);
+        }
+        setDrivePower(0);
+    }
+    public void turnBackToSpecialAngle(int ang, float power) {
+//        ElapsedTime time = new ElapsedTime();
+//        while (time.seconds() < 3) {
+//            telewithup("CCW, theta", specialTheta());
+//        }
+        int theta = specialTheta();
+        if (ang > 180) ang -= 360;
+        if (theta < ang) { // CCW
+            lf.setPower(-power);
+            lb.setPower(-power);
+            while ((theta = specialTheta()) < ang) telewithup("CCW, theta", theta);
+            //setCWPower(power / 2f);
+            //while ((theta = specialTheta()) > ang) telewithup("CW, theta", theta);
+        } else if (theta > ang) { // CW
+            rf.setPower(-power);
+            rb.setPower(-power);
+            while ((theta = specialTheta()) > ang) telewithup("CW, theta", theta);
+            //setCCWPower(power / 2f);
+            //while ((theta = specialTheta()) < ang) telewithup("CCW, theta", theta);
+        }
+        setDrivePower(0);
+    }
+    private void getStraight() {
+        int theta = specialTheta();
+        if (theta > 0) { // Turn CW
+            setCWPower(.33);
+            while ((theta = specialTheta()) > 0) {
+                tele("Status", "Getting straight... Pass 1");
+                telewithup("CW, theta", theta);
+            }
+            setCCWPower(.2);
+            while ((theta = specialTheta()) < 0) {
+                tele("Status", "Getting straight... Pass 2");
+                telewithup("CCW, theta", theta);
+            }
+        } else if (theta < 0) { // Turn CCW
+            setCCWPower(.33);
+            while ((theta = specialTheta()) < 0) {
+                tele("Status", "Getting straight... Pass 1");
+                telewithup("CCW, theta", theta);
+            }
+            setCWPower(.2);
+            while ((theta = specialTheta()) > 0) {
+                tele("Status", "Getting straight... Pass 2");
+                telewithup("CW, theta", theta);
+            }
+        }
+        setDrivePower(0);
+        telewithup("Status", "Straightened.");
+    }
 
     private int driveCurPosition () {
         return (rf.getCurrentPosition() + rb.getCurrentPosition() + lf.getCurrentPosition() + lb.getCurrentPosition()) / 4;
@@ -998,8 +1273,23 @@ public class Mecanlift {
     private void setDrivePower (double power) {
         rf.setPower(power); rb.setPower(power); lf.setPower(power); lb.setPower(power);
     }
+    private void setCCWPower (double power) {
+        rf.setPower(power);
+        rb.setPower(power);
+        lf.setPower(-power);
+        lb.setPower(-power);
+    }
+    private void setCWPower (double power) {
+        rf.setPower(-power);
+        rb.setPower(-power);
+        lf.setPower(power);
+        lb.setPower(power);
+    }
 
     public void tellDriverRelPos() { visuals.vuforia.tellDriverRelPos(); }
+    private void telewithup(String caption, Object data) {opmode.telemetry.addData(caption, data); opmode.telemetry.update(); }
+    private void tele(String caption, Object data) { opmode.telemetry.addData(caption, data); }
+    private void teleup () { opmode.telemetry.update(); }
 
     @Deprecated public void driveToBox (FIELDPOS pos) {
         lift.lift();
@@ -1029,6 +1319,49 @@ public class Mecanlift {
 //        lb.setPower(0);
     }
 
+    /** OLD CODE */
+//    private void doRotation (boolean b) { // NOTE: Moved to separate class
+//        if (rotating) {
+//            if (Lift.update_encoders(rot)) { // Done rotating
+//                rotating = false;
+//                flipped = !flipped;
+//                if (lifted) { lift.ground(); lifted = false; }
+//                return;
+//            } else return;
+//        }
+//        if (rotated && !b) { rotated = false; }
+//        if (!b) return;
+//        if (!rotated) { // Start rotating
+//            if (lift.grounded()) { lifted = true; lift.setPosition(flip_position); }
+//            if (flipped) {
+//                rot.setTargetPosition(nflipped_pos);
+//                rot.setPower(flip_power);
+//            } else {
+//                rot.setTargetPosition(flipped_pos);
+//                rot.setPower(flip_power);
+//            }
+//            rotating = true;
+//        }
+//    }
+//    private void doRotFix (boolean b) { NOTE: Moved to separate class
+//        if (fixing && Lift.update_encoders(rot)) {
+//            rot.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//            if (lifted) { lift.ground(); lifted = false; }
+//            fixing = false;
+//            return;
+//        }
+//        if (fixed && !b) { fixed = false; return; }
+//        if (!b) return;
+//        if (!fixed) {
+//            if (lift.grounded()) { lifted = true; lift.setPosition(flip_position); }
+//            rot.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            rot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//            rot.setTargetPosition(-flipped_pos);
+//            rot.setPower(-flip_power);
+//            fixing = true;
+//        }
+//    }
 //    private boolean checkGyro () { NOTE: Didn't work. It was too specific that the robot just passed right over it.
 //        return (gyro.getHeading() < qt_angle + 2) && (gyro.getHeading() > qt_angle - 2);
 //    }

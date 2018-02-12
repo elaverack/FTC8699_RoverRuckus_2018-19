@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test.alignment;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;

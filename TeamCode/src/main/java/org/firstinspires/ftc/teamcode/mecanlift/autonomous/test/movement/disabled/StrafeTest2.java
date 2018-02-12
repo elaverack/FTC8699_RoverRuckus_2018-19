@@ -1,6 +1,7 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test.movement.disabled;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -10,7 +11,7 @@ import org.firstinspires.ftc.teamcode.visuals.Vector3;
 // Created on 2/9/2018 at 3:48 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.autonomous.test
 
 @Autonomous(name = "Strafe Test 2 (1ft+drift, left)", group = "test")
-//@Disabled
+@Disabled
 public class StrafeTest2 extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test.jewels;
 
 import android.view.View;
 import android.view.ViewGroup;

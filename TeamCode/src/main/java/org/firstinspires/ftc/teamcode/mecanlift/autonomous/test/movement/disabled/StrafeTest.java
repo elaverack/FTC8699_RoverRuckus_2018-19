@@ -1,16 +1,17 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test.movement.disabled;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 // Created on 2/9/2018 at 3:48 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.autonomous.test
 
-@Autonomous(name = "Strafe Test Long (11200, left)", group = "test")
-//@Disabled
-public class StrafeTestL extends LinearOpMode {
+@Autonomous(name = "Strafe Test (5600, left)", group = "test")
+@Disabled
+public class StrafeTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Mecanlift robot;
@@ -27,7 +28,7 @@ public class StrafeTestL extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        robot.strafeDistance(11200,false);
+        robot.strafeAccelDistance(5600,1.0/6000.0, false);
         int end_theta = robot.theta();
 
         while (opModeIsActive()) {

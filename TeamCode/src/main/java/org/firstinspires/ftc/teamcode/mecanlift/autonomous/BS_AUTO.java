@@ -11,30 +11,24 @@ import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 @Autonomous(name = "QUAL_BS_AUTO", group = "Iterative Opmode")
 //@Disabled
-public class Mecanlift_BS_Auto extends LinearOpMode {
+public class BS_AUTO extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Mecanlift robot;
-    //private final Mecanlift.FIELDPOS pos = Mecanlift.FIELDPOS.BLUE_CORNER;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
         robot = new Mecanlift(this, Mecanlift.Color.BLUE, Mecanlift.Position.SIDE);
 
-        telemetry.addData("Status", "Align vert. line with edge of jewel and hor. line with bottom of vumark.");
+        telemetry.addData("Status", "Initialized");
         telemetry.update();
-        while (!isStarted()) { robot.showAligning(); }
+
+        while (!isStarted()) { robot.doFullInitLoop(); }
+
         runtime.reset();
 
-        robot.doParkAutonomous(this);
-
-        while (opModeIsActive()) {
-            telemetry.addData("Status", "Done. Run Time: " + runtime.toString());
-            telemetry.update();
-        }
-
-        //robot.closeVisuals();
+        robot.doFullAutonomous(this);
 
     }
 }

@@ -1,8 +1,9 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test.movement;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.vuforia.CameraDevice;
 
 import org.firstinspires.ftc.teamcode.visuals.VuforiaHandler;
 
@@ -27,15 +28,20 @@ public class NavTest extends OpMode {
     public void init_loop() { }
 
     @Override
-    public void start() { runtime.reset(); vuforia.start(); }
+    public void start() { runtime.reset(); vuforia.start(); CameraDevice.getInstance().setFlashTorchMode(true); }
 
     @Override
     public void loop() {
-        vuforia.tellDriverRelPos();
+        VuforiaHandler.PosRot pr = vuforia.getRelativePosition();
+        double newX = pr.position.x + Math.abs(pr.position.z)*Math.tan(Math.toRadians(pr.rotation.y));
+        if (pr.rotation.y > 0) newX *= -1;
+        pr.position.teleout(this, "pos");
+        pr.rotation.teleout(this, "rot");
+        telemetry.addData("new x", newX);
         telemetry.addData("Status", "Running: " + runtime.toString());
     }
 
     @Override
-    public void stop() {  }
+    public void stop() { CameraDevice.getInstance().setFlashTorchMode(false); }
 
 }

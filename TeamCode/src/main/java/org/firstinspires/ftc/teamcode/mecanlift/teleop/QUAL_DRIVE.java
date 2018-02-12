@@ -11,32 +11,19 @@ import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 @TeleOp(name = "QUAL_DRIVE", group = "Iterative Opmode")
 //@Disabled
-public class MecanliftDrive extends OpMode {
+public class QUAL_DRIVE extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Mecanlift robot;
 
-    @Override
-    public void init() {
-        robot = new Mecanlift(this);
-        telemetry.addData("Status", "Initialized");
-    }
+    @Override public void init() { robot = new Mecanlift(this); telemetry.addData("Status", "Initialized"); }
 
-    @Override
-    public void init_loop() {  }
+    @Override public void init_loop() {  }
 
-    @Override
-    public void start() { robot.start(); runtime.reset(); }
+    @Override public void start() { robot.start(); runtime.reset(); }
 
-    @Override
-    public void loop() {
-        robot.drive(true);
-        telemetry.addData("Status", "Running: " + runtime.toString());
-    }
+    @Override public void loop() { robot.drive(true); telemetry.addData("Status", "Running: " + runtime.toString()); }
 
-    @Override
-    public void stop() {
-        robot.stop();
-    }
+    @Override public void stop() { robot.stop(); }
 
 }
