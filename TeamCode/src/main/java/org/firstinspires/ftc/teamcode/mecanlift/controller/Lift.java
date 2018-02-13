@@ -22,7 +22,8 @@ public class Lift {
             upd = false,
             gd = false,
             ddupd = false,
-            dddownd = false,
+            dddownd = false, 
+            fixd = false,
             eGood = false;
 
     public Lift(DcMotor lift) {
@@ -41,7 +42,7 @@ public class Lift {
     }
 
     // TODO: Add grounding code (and method)
-    public void run (boolean up, boolean ground, boolean dd_up, boolean dd_down) {
+    @Deprecated public void run (boolean up, boolean ground, boolean dd_up, boolean dd_down) {
 
         do_up(up);
 
@@ -52,6 +53,21 @@ public class Lift {
         do_ddup(dd_up);
 
         do_dddown(dd_down);
+
+    }
+    public void run (boolean up, boolean ground, boolean dd_up, boolean dd_down, boolean fix) {
+
+        do_up(up);
+
+        do_ground(ground);
+
+        update_encoders();
+
+        do_ddup(dd_up);
+
+        do_dddown(dd_down);
+        
+        do_fix(fix);
 
     }
 
@@ -82,7 +98,7 @@ public class Lift {
                     l.setTargetPosition(lift2); l.setPower(liftS); eGood = false;
                     break;
                 case lift2:
-                    l.setTargetPosition(lift1); l.setPower(-liftS); eGood = false;
+                    l.setTargetPosition(lift1); l.setPower(liftS); eGood = false;
                     break;
             }
             upd = true;
@@ -92,7 +108,7 @@ public class Lift {
     private void do_ground (boolean b) {
         if (gd && !b) { gd = false; return; }
         if (!b) return;
-        if (!gd) { l.setTargetPosition(lift0); l.setPower(-liftS); eGood = false; gd = true; }
+        if (!gd) { l.setTargetPosition(lift0); l.setPower(liftS); eGood = false; gd = true; }
     }
 
     private void do_ddup (boolean b) {
@@ -122,6 +138,19 @@ public class Lift {
             l.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             l.setPower(-liftDS);
             dddownd = true;
+        }
+    }
+    
+    private void do_fix (boolean b) {
+        if (fixd && !b) { fixd = false; return; }
+        if (!b) return;
+        if (!fixd) {
+            l.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            l.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            l.setTargetPosition(lift0);
+            l.setPower(liftS);
+            eGood = false; 
+            fixd = true; 
         }
     }
 

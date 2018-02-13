@@ -16,7 +16,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
 import org.firstinspires.ftc.teamcode.visuals.Vector3;
 import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 import org.firstinspires.ftc.teamcode.visuals.VuforiaHandler;
+import org.opencv.core.Mat;
 import org.opencv.core.Point;
+
+import java.util.Vector;
 
 import static org.firstinspires.ftc.teamcode.visuals.Vector3.round;
 
@@ -114,11 +117,11 @@ public class Mecanlift {
                 case LEFT:  column_adjustment += column_adjustment_inches;
                 case RIGHT: column_adjustment -= column_adjustment_inches;
             }
-            switch (alliancePositionID) {
+            switch (alliancePositionID) { // < 0 means left
                 case corner_id + red_id:    return ret+column_adjustment-phone_glyph_offset;
-                case side_id + red_id:      ret -= mark_offset_inches; return -ret-column_adjustment; // TODO: UPDATE RS AND BS WITH PHONE OFFSET
+                case side_id + red_id:      /*ret -= mark_offset_inches; return -(ret+column_adjustment-phone_glyph_offset)*/ return -column_adjustment;
                 case corner_id + blue_id:   return column_adjustment-ret-phone_glyph_offset;
-                case side_id + blue_id:     ret += mark_offset_inches; return ret-column_adjustment;
+                case side_id + blue_id:     /*ret += mark_offset_inches; return ret-column_adjustment+phone_glyph_offset;*/ return -column_adjustment;
                 default:                    return 0;
             }
         }
@@ -328,17 +331,20 @@ public class Mecanlift {
     private boolean gotem = false;
     public void doFullInitLoop () {
         showAligning();
-        opmode.telemetry.addData("Seeing?", checkColumn());
-        opmode.telemetry.update();
+        tele("Seeing?", checkColumn());
+        tele("Gotem", gotem);
         VuforiaHandler.PosRot pr = visuals.vuforia.getRelativePosition();
         if (pr.position.z != 0 && lastKnownPos == null) {
             lastKnownPos = pr;
             gotem = true;
         } else if (pr.position.z != 0) {
             lastKnownPos.doAverage(pr);
+            lastKnownPos.position.teleout(opmode, "Pos");
+            lastKnownPos.rotation.teleout(opmode, "Rot");
         } else if (gotem) {
             lastKnownPos = null; gotem = false;
         }
+        teleup();
     }
 
     /** START METHODS */
@@ -348,7 +354,7 @@ public class Mecanlift {
     public void drive() { // New controls of 2/12
 
         /** LIFT */
-        lift.run(lift_pos_tog(), lift_ground(), lift_direct_drive_up(), lift_direct_drive_down());
+        lift.run(lift_pos_tog(), lift_ground(), lift_direct_drive_up(), lift_direct_drive_down(), (opmode.gamepad2.right_stick_button && opmode.gamepad2.left_stick_button));
 
         /** GRABBER */
         boolean a = toggle_bottom(), b = toggle_top();
@@ -644,10 +650,10 @@ public class Mecanlift {
             fg[0] = true;
             return true;
         } else if (!opmode.gamepad1.right_stick_button && fg[0]) fg[0] = false;
-        if (opmode.gamepad1.right_bumper && !fg[1]) {
+        if (opmode.gamepad2.right_bumper && !fg[1]) {
             fg[1] = true;
             return true;
-        } else if (!opmode.gamepad1.right_bumper && fg[1]) fg[1] = false;
+        } else if (!opmode.gamepad2.right_bumper && fg[1]) fg[1] = false;
         return false;
     }
     private boolean lift_direct_drive_up () { return opmode.gamepad1.y || opmode.gamepad2.left_bumper; }
@@ -708,9 +714,11 @@ public class Mecanlift {
             telewithup("Status", "Placing glyph and parking...");
             placeGlyph(opmode);
         } else if (opmode.opModeIsActive() && alliancePosition == Position.SIDE) {
+            telewithup("Status", "Driving to cryptobox...");
+            doSideToCryptobox(opmode);
 
-
-
+            telewithup("Status", "Placing glyph and parking...");
+            placeGlyph(opmode);
         }
 
         VisualsHandler.phoneLightOff();
@@ -876,6 +884,17 @@ public class Mecanlift {
                 5.23f*(.6347f - (float)Math.sin(Math.toRadians(39.4 + delta_theta)))
         );
     }
+    private static Vector3 newCalcPhonePositionDelta(int theta0, int theta1, int theta2) {
+        Vector3 a = f(theta1-theta0), b = f(theta2-theta0);
+        return new Vector3((a.x*-1)+b.x, (a.y*-1)+b.y, 0);
+    }
+    private static Vector3 f(int delta_theta) { // Mr. Riehm's algorithm
+        return new Vector3(
+                5.23f*((float)Math.cos(Math.toRadians(39.4 + delta_theta)) - (float)Math.cos(Math.toRadians(39.4))),
+                5.23f*((float)Math.sin(Math.toRadians(39.4)) - (float)Math.sin(Math.toRadians(39.4 + delta_theta))),
+                0
+        );
+    }
 
     private void driveToCryptobox (LinearOpMode opmode) {
         if (!opmode.opModeIsActive() || lastKnownPos == null) return;
@@ -958,6 +977,70 @@ public class Mecanlift {
 
         lift.groundground();
         lift.waitForEncoders();
+    }
+
+    private void doSideToCryptobox (LinearOpMode opmode) {
+        if (!opmode.opModeIsActive() || lastKnownPos == null) return;
+        VisualsHandler.phoneLightOff();
+
+//        int start_theta = specialTheta();
+
+        lift.setPosition(flip_position);
+
+//        // Turn towards cryptobox
+//        if (allianceColor == Color.BLUE) {
+//            turnToAngle((int)lastKnownPos.rotation.y + 90, true, .3f);
+//        } else if (allianceColor == Color.RED) {
+//            turnToAngle((int)lastKnownPos.rotation.y + 270, false, .3f);
+//        }
+        getPerpendicular();
+
+        lift.waitForEncoders();
+
+        // Drive three feet
+        telewithup("Status", "Driving three feet...");
+        Vector3 strafeDrift = strafeDistanceDrift(36, allianceColor != Color.BLUE);
+
+        lastKnownPos.position.mmToInches();
+
+//        int end_theta = specialTheta();
+//
+//        Vector3 phoneD = newCalcPhonePositionDelta((int)lastKnownPos.rotation.y, start_theta, end_theta);
+
+        telewithup("Status", "Updating position...");
+        lastKnownPos.position.z += strafeDrift.y;
+        if (allianceColor == Color.BLUE) {
+            lastKnownPos.position.x -= 36 + strafeDrift.x;
+        } else if (allianceColor == Color.RED) {
+            lastKnownPos.position.x += 36 + strafeDrift.x;
+        }
+
+//        telewithup("Status", "Aligning...");
+//        if (allianceColor == Color.BLUE) {
+//            turnToSpecialAngle((int)lastKnownPos.rotation.y + 90, .15f);
+//        } else if (allianceColor == Color.RED) {
+//            turnToSpecialAngle((int)lastKnownPos.rotation.y + 270, .15f);
+//        }
+//        getPerpendicular();
+
+//        telewithup("Status", "Strafing four inches...");
+//        Vector3 straightDrift = driveDistanceDrift(6);
+//
+//        lastKnownPos.position.z -= straightDrift.x;
+//        lastKnownPos.position.x -= straightDrift.y;
+
+        strafeDistanceDrift(2, allianceColor == Color.BLUE);
+
+        getParallel();
+
+        double d = keyColumn.inchesToColumnFromVumark(alliancePosition.toID() + allianceColor.toID());
+        boolean right = d > 0;
+        d = Math.abs(d) /*- Math.abs(lastKnownPos.position.x)*/;
+
+        telewithup("Status", "Strafing " + Vector3.round(((float)d)) + " inches...");
+        strafeDrift = strafeDistanceDrift(d, right);
+
+        telewithup("Status", "Done driving to cryptobox from side...");
     }
 
     private void driveDistance (double inches) {
@@ -1249,6 +1332,114 @@ public class Mecanlift {
         }
         setDrivePower(0);
         telewithup("Status", "Straightened.");
+    }
+    private void getParallel() { // To vumark
+
+        getPerpendicular();
+
+//        int theta = theta();
+//        float goal = lastKnownPos.rotation.y + 180;
+//        if (goal > 180) goal -= 360;
+//        if (theta > goal) { // Turn CW
+//            setCWPower(.33);
+//            while ((theta = theta()) > goal) {
+//                tele("Status", "Getting parallel... Pass 1");
+//                tele("Goal", goal);
+//                telewithup("CW, theta", theta);
+//            }
+//            setCCWPower(.2);
+//            while ((theta = theta()) < goal) {
+//                tele("Status", "Getting parallel... Pass 2");
+//                tele("Goal", goal);
+//                telewithup("CCW, theta", theta);
+//            }
+//        } else if (theta < goal) { // Turn CCW
+//            setCCWPower(.33);
+//            while ((theta = theta()) < goal) {
+//                tele("Status", "Getting parallel... Pass 1");
+//                tele("Goal", goal);
+//                telewithup("CCW, theta", theta);
+//            }
+//            setCWPower(.2);
+//            while ((theta = theta()) > goal) {
+//                tele("Status", "Getting parallel... Pass 2");
+//                tele("Goal", goal);
+//                telewithup("CW, theta", theta);
+//            }
+//        }
+
+        int theta = specialTheta(), goal = theta + 180;
+        setCCWPower(.3);
+        while (theta < goal) {
+            tele("Status", "Getting parallel... Pass 1");
+            tele("Goal", goal);
+            telewithup("CCW, theta", theta);
+            if ((theta = theta()) > 270) theta = specialTheta();
+        }
+        setCWPower(.2);
+        while ((theta = theta()) > goal) {
+            tele("Status", "Getting parallel... Pass 2");
+            tele("Goal", goal);
+            telewithup("CW, theta", theta);
+        }
+//        if (theta > goal) { // Turn CW
+//            setCWPower(.33);
+//            while ((theta = theta()) > goal) {
+//                tele("Status", "Getting parallel... Pass 1");
+//                tele("Goal", goal);
+//                telewithup("CW, theta", theta);
+//            }
+//            setCCWPower(.2);
+//            while ((theta = theta()) < goal) {
+//                tele("Status", "Getting parallel... Pass 2");
+//                tele("Goal", goal);
+//                telewithup("CCW, theta", theta);
+//            }
+//        } else if (theta < goal) { // Turn CCW
+//            setCCWPower(.33);
+//            while ((theta = theta()) < goal) {
+//                tele("Status", "Getting parallel... Pass 1");
+//                tele("Goal", goal);
+//                telewithup("CCW, theta", theta);
+//            }
+//            setCWPower(.2);
+//            while ((theta = theta()) > goal) {
+//                tele("Status", "Getting parallel... Pass 2");
+//                tele("Goal", goal);
+//                telewithup("CW, theta", theta);
+//            }
+//        }
+        setDrivePower(0);
+        telewithup("Status", "Paralleled.");
+    }
+    private void getPerpendicular() { // To vumark
+        int theta = specialTheta();
+        float goal = lastKnownPos.rotation.y;
+        if (theta > goal) { // Turn CW
+            setCWPower(.33);
+            while ((theta = specialTheta()) > goal) {
+                tele("Status", "Getting parallel... Pass 1");
+                telewithup("CW, theta", theta);
+            }
+            setCCWPower(.2);
+            while ((theta = specialTheta()) < goal) {
+                tele("Status", "Getting parallel... Pass 2");
+                telewithup("CCW, theta", theta);
+            }
+        } else if (theta < goal) { // Turn CCW
+            setCCWPower(.33);
+            while ((theta = specialTheta()) < goal) {
+                tele("Status", "Getting parallel... Pass 1");
+                telewithup("CCW, theta", theta);
+            }
+            setCWPower(.2);
+            while ((theta = specialTheta()) > goal) {
+                tele("Status", "Getting parallel... Pass 2");
+                telewithup("CW, theta", theta);
+            }
+        }
+        setDrivePower(0);
+        telewithup("Status", "Paralleled.");
     }
 
     private int driveCurPosition () {
