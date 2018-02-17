@@ -2,6 +2,11 @@ package org.firstinspires.ftc.teamcode.mecanlift.controller;
 
 // Created on 1/28/2018 at 11:29 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift
 
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cColorSensor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -145,14 +150,14 @@ public class Mecanlift {
 
     /** CONSTANTS */
     private static final double     // Grabber servo positions
-            blo = 0.078,            // Bottom left open
-            blc = 0.310,            // Bottom left close
-            bro = 0.98,             // Bottom right open
-            brc = 0.670,            // Bottom right close
-            tlo = 0.98,             // Top left open
-            tlc = 0.700,            // Top left close
-            tro = 0.118,            // Top right open
-            trc = 0.450,            // Top right close
+            blo = 0.157,            // Bottom left open
+            blc = 0.392,            // Bottom left close
+            bro = 0.863,            // Bottom right open
+            brc = 0.647,            // Bottom right close
+            tlo = 0.863,            // Top left open
+            tlc = 0.627,            // Top left close
+            tro = 0.196,            // Top right open
+            trc = 0.412,            // Top right close
 
             jewelArm_down = .2,    // The jewel servo position for lowering the arm
             jewelArm_up = 1,        // The jewel servo position for raising the arm
@@ -180,7 +185,9 @@ public class Mecanlift {
             corner_id = 1,          // Number ID for corner position
             side_id = 4,            // Number ID for side position
             red_id = 2,             // Number ID for red alliance color
-            blue_id = 7;            // Number ID for blue alliance color
+            blue_id = 7,            // Number ID for blue alliance color
+
+            BUTTON_ID = 3141592;
 
     private static final Point
             red_center = new Point(621, 1095),
@@ -281,6 +288,9 @@ public class Mecanlift {
         tr = new ToggleServo(opmode.hardwareMap.servo.get(grabber_trN), tro, trc);
         rot = new Rotater(opmode.hardwareMap.dcMotor.get(grabber_rotN), lift);
 
+        /** RELIC ARM */
+        initRelicArm();
+
         /** JEWEL ARM */
         jewelArm = opmode.hardwareMap.servo.get(jewelN);
 
@@ -289,6 +299,7 @@ public class Mecanlift {
         if (auto) {
             /** VISUALS */
             visuals = new VisualsHandler(opmode, false);
+
             visuals.vertx = alignment_x;
             visuals.hory = alignment_y;
             visuals.red.center = red_center;
@@ -299,6 +310,11 @@ public class Mecanlift {
             visuals.showAlignmentCircles();
             activateVuforia();
             time = new ElapsedTime();
+
+            visuals.getPreview().setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) { gettingem = true; visuals.getPreview().setOnClickListener(null); }
+            });
 
             /** SENSORS */
             jewelSensor = (ModernRoboticsI2cColorSensor)opmode.hardwareMap.colorSensor.get(colorN);
@@ -328,55 +344,58 @@ public class Mecanlift {
 
     /** INIT LOOP METHODS */
     public void showAligning () { if (((int)(time.seconds()%2) == 1)) visuals.showAlignmentCircles(); }
-    private boolean gotem = false;
+    private boolean gotem = false, gettingem = false;
     public void doFullInitLoop () {
         showAligning();
         tele("Seeing?", checkColumn());
-        tele("Gotem", gotem);
-        VuforiaHandler.PosRot pr = visuals.vuforia.getRelativePosition();
-        if (pr.position.z != 0 && lastKnownPos == null) {
-            lastKnownPos = pr;
-            gotem = true;
-        } else if (pr.position.z != 0) {
-            lastKnownPos.doAverage(pr);
-            lastKnownPos.position.teleout(opmode, "Pos");
-            lastKnownPos.rotation.teleout(opmode, "Rot");
-        } else if (gotem) {
-            lastKnownPos = null; gotem = false;
+        if (gettingem) {
+            tele("Gotem", gotem);
+            VuforiaHandler.PosRot pr = visuals.vuforia.getRelativePosition();
+            if (pr.position.z != 0 && lastKnownPos == null) {
+                lastKnownPos = pr;
+                gotem = true;
+            } else if (pr.position.z != 0) {
+                lastKnownPos.doAverage(pr);
+                lastKnownPos.position.teleout(opmode, "Pos");
+                lastKnownPos.rotation.teleout(opmode, "Rot");
+            } else if (gotem) {
+                lastKnownPos = null;
+                gotem = false;
+            }
         }
         teleup();
     }
 
     /** START METHODS */
-    public void start () { raiseArm(); bl.open(); br.open(); tl.open(); tr.open(); lift.start(); }
+    public void start () { raiseArm(); bl.open(); br.open(); tl.open(); tr.open(); startRelicArm(); lift.start(); }
 
     /** LOOP METHODS */
     public void drive() { // New controls of 2/12
 
-        /** LIFT */
-        lift.run(lift_pos_tog(), lift_ground(), lift_direct_drive_up(), lift_direct_drive_down(), (opmode.gamepad2.right_stick_button && opmode.gamepad2.left_stick_button));
-
-        /** GRABBER */
-        boolean a = toggle_bottom(), b = toggle_top();
-        if (!rot.flipped) {
-            bl.tob(a);
-            br.tob(a);
-            tl.tob(b);
-            tr.tob(b);
-        } else {
-            bl.tob(b);
-            br.tob(b);
-            tl.tob(a);
-            tr.tob(a);
-        }
-        rot.doRotation(flip_grabber());
-        rot.doRotFix(fix_rotate());
+        operateMechanisms();
 
         /** MECANUM WHEELS */
+        runDrive();
+
+    }
+    public void drive(boolean debug_drive) {
+        drive();
+        if (debug_drive) {
+            opmode.telemetry.addData("Joys", String.format("y: %1$s, x: %2$s, r: %3$s",
+                    round(-opmode.gamepad1.right_stick_y),
+                    round(opmode.gamepad1.right_stick_x),
+                    round(opmode.gamepad1.left_stick_x)
+            ));
+            opmode.telemetry.addData("Pows", String.format("rf: %1$s, rb: %2$s, lf: %3$s, lb: %4$s",
+                    round(powerRF), round(powerRB), round(powerLF), round(powerLB)
+            ));
+        }
+    }
+    public void runDrive () {
         float
-            straight    = -opmode.gamepad1.right_stick_y,
-            strafe      = opmode.gamepad1.right_stick_x,
-            rotate      = opmode.gamepad1.left_stick_x;
+                straight    = -opmode.gamepad1.right_stick_y,
+                strafe      = opmode.gamepad1.right_stick_x,
+                rotate      = opmode.gamepad1.left_stick_x;
         powerRF = straight;
         powerRB = straight;
         powerLF = straight;
@@ -401,20 +420,28 @@ public class Mecanlift {
         lb.setPower(powerLB);
         rf.setPower(powerRF);
         rb.setPower(powerRB);
-
     }
-    public void drive(boolean debug_drive) {
-        drive();
-        if (debug_drive) {
-            opmode.telemetry.addData("Joys", String.format("y: %1$s, x: %2$s, r: %3$s",
-                    round(-opmode.gamepad1.right_stick_y),
-                    round(opmode.gamepad1.right_stick_x),
-                    round(opmode.gamepad1.left_stick_x)
-            ));
-            opmode.telemetry.addData("Pows", String.format("rf: %1$s, rb: %2$s, lf: %3$s, lb: %4$s",
-                    round(powerRF), round(powerRB), round(powerLF), round(powerLB)
-            ));
+    public void operateMechanisms() {
+        /** LIFT */
+        lift.run(lift_pos_tog(), lift_ground(), lift_direct_drive_up(), lift_direct_drive_down(), (opmode.gamepad2.right_stick_button && opmode.gamepad2.left_stick_button));
+
+        /** GRABBER */
+        boolean a = toggle_bottom(), b = toggle_top();
+        if (!rot.flipped) {
+            bl.tob(a);
+            br.tob(a);
+            tl.tob(b);
+            tr.tob(b);
+        } else {
+            bl.tob(b);
+            br.tob(b);
+            tl.tob(a);
+            tr.tob(a);
         }
+        rot.doRotation(flip_grabber());
+        rot.doRotFix(fix_rotate());
+
+        doRelicArm(-opmode.gamepad2.right_stick_y, opmode.gamepad2.y, opmode.gamepad2.x);
     }
 
     @Deprecated public void drive(
@@ -513,6 +540,9 @@ public class Mecanlift {
         lf.setPower(0);
         lb.setPower(0);
 
+        /** RELIC ARM */
+        stopRelicArm();
+
         /** LIFT */
         lift.stop();
 
@@ -553,6 +583,36 @@ public class Mecanlift {
             powerLB -= 1f;
         }
     }
+
+    /** RELIC ARM */
+//    grab: ng 150, g 80
+//    up: d 70, u 215
+//    out: continuous
+            // This is super lazy programming. Sorry...
+    private ContinuousServo out;
+    private ToggleServo grab, up;
+    private static final double
+            grab_no_grab = .588,
+            grab_grab = .314,
+            up_up = .843,
+            up_down = .2745;
+    private void initRelicArm() {
+        out = new ContinuousServo(opmode.hardwareMap.servo.get("out"));
+        grab = new ToggleServo(opmode.hardwareMap.servo.get("grab"), grab_no_grab, grab_grab);
+        up = new ToggleServo(opmode.hardwareMap.servo.get("up"), up_down, up_up);
+        //out.stop();
+    }
+    private void startRelicArm() {
+        out.stop();
+        up.open();
+        grab.open();
+    }
+    private void doRelicArm (float outPower, boolean togGrab, boolean togUp) {
+        out.setPower(outPower);
+        grab.tob(togGrab);
+        up.tob(togUp);
+    }
+    private void stopRelicArm () { out.stop(); }
 
     /** GAMEPADS */
 //    gamepad 1:

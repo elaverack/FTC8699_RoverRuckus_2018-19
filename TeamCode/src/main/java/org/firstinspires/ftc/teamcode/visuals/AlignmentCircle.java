@@ -17,5 +17,11 @@ public class AlignmentCircle {
     public AlignmentCircle(Point center, int radius) { this.center = center; this.radius = radius; }
 
     public void draw(Mat mat, Scalar color) { Imgproc.circle(mat, center, radius, color, thickness); }
+    public void draw(Mat mat, Scalar color, double scale) {
+        Point newCenter = center;
+        newCenter.x *= scale;
+        newCenter.y *= scale;
+        Imgproc.circle(mat, newCenter, (int)(radius*scale), color, thickness);
+    }
 
 }
