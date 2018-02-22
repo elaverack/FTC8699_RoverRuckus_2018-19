@@ -97,7 +97,6 @@ public class VuforiaHandler {
         if (!anyVisible()) return new PosRot();
 
         pose = ((VuforiaTrackableDefaultListener) relicTemplate.getListener()).getPose();
-        //telemetry.addData("Pose", format(pose));
         if (pose == null) return new PosRot();
 
         return new PosRot(pose);
@@ -133,6 +132,10 @@ public class VuforiaHandler {
         public void doAverage (PosRot pr) {
             position = Vector3.average(position, pr.position);
             rotation = Vector3.average(rotation, pr.rotation);
+        }
+        public void teleout (OpMode opmode) {
+            position.teleout(opmode, "Position");
+            rotation.teleout(opmode, "Rotation");
         }
     }
 

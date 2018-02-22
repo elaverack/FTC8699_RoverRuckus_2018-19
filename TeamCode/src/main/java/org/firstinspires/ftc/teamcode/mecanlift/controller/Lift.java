@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.mecanlift.controller;
 
 // Created on 1/26/2018 at 3:56 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
@@ -73,7 +74,7 @@ public class Lift {
 
     public void stop() { l.setPower(0); }
 
-    public static boolean update_encoders (DcMotor m) {
+    static boolean update_encoders (DcMotor m) {
         if (m.getMode() != DcMotor.RunMode.RUN_TO_POSITION) return false;
         boolean ret = m.getCurrentPosition() < m.getTargetPosition() + thres &&
                 m.getCurrentPosition() > m.getTargetPosition() - thres;
@@ -104,13 +105,11 @@ public class Lift {
             upd = true;
         }
     }
-
     private void do_ground (boolean b) {
         if (gd && !b) { gd = false; return; }
         if (!b) return;
         if (!gd) { l.setTargetPosition(lift0); l.setPower(liftS); eGood = false; gd = true; }
     }
-
     private void do_ddup (boolean b) {
         if (ddupd && !b) {
             l.setPower(0);
@@ -125,7 +124,6 @@ public class Lift {
             ddupd = true;
         }
     }
-
     private void do_dddown (boolean b) {
         if (dddownd && !b) {
             l.setPower(0);
@@ -140,7 +138,6 @@ public class Lift {
             dddownd = true;
         }
     }
-    
     private void do_fix (boolean b) {
         if (fixd && !b) { fixd = false; return; }
         if (!b) return;
@@ -154,11 +151,13 @@ public class Lift {
         }
     }
 
+    /** FOR AUTONOMOUS USE */
     public void setPosition (int pos) { l.setTargetPosition(pos); l.setPower(liftS); eGood = false; }
-    public void ground () { l.setTargetPosition(lift0); l.setPower(liftS); eGood = false; }
-    public void groundground () { l.setTargetPosition(0); l.setPower(.5); eGood = false; }
-    public void lift () { l.setTargetPosition(lift1); l.setPower(liftS); eGood = false; }
-    public boolean grounded () { return l.getTargetPosition() == lift0; }
-    public void waitForEncoders () { while (!update_encoders(l)); }
+    void ground () { l.setTargetPosition(lift0); l.setPower(liftS); eGood = false; }
+    void groundground () { l.setTargetPosition(0); l.setPower(.5); eGood = false; }
+    void lift () { l.setTargetPosition(lift1); l.setPower(liftS); eGood = false; }
+    boolean grounded () { return l.getTargetPosition() == lift0; }
+    @Deprecated public void waitForEncoders () { while (!update_encoders(l)); }
+    public void waitForEncoders (LinearOpMode opmode) { while (!update_encoders(l) && opmode.opModeIsActive()); }
 
 }

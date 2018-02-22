@@ -125,7 +125,7 @@ public class VisualsHandler {
         ImageView iv = new ImageView(opmode.hardwareMap.appContext);
         iv.setId(PREVIEW_ID);
         layout = new LayoutInterfacer(opmode, getPreviewContainer(), iv);
-        if (!doVuforiaPreview) setPreview(generateIntro(getPreviewContainer().getWidth()));
+        if (!doVuforiaPreview) showIntro();
     }
 
     public LinearLayout getPreviewContainer() {
@@ -369,6 +369,7 @@ public class VisualsHandler {
         return bmp;
     }
 
+    public void showIntro () { setPreview(generateIntro(getPreviewContainer().getWidth())); }
     private static Mat generateIntro(int width) {
         final String
                 l1 = "You are using",
