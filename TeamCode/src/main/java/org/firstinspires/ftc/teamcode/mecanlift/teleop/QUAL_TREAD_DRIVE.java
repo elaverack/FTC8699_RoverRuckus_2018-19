@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.teleop.test;
+package org.firstinspires.ftc.teamcode.mecanlift.teleop;
 
 import com.google.gson.internal.bind.TreeTypeAdapter;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -10,9 +10,9 @@ import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 // Created on 2/15/2018 at 9:53 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.teleop.test
 
-@TeleOp(name = "Thread Test", group = "test")
+@TeleOp(name = "QUAL THREAD DRIVE", group = "Iterative Opmode")
 //@Disabled
-public class ThreadTest extends OpMode {
+public class QUAL_TREAD_DRIVE extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private Mecanlift robot;

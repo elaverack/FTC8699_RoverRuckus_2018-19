@@ -158,6 +158,6 @@ public class Lift {
     void lift () { l.setTargetPosition(lift1); l.setPower(liftS); eGood = false; }
     boolean grounded () { return l.getTargetPosition() == lift0; }
     @Deprecated public void waitForEncoders () { while (!update_encoders(l)); }
-    public void waitForEncoders (LinearOpMode opmode) { while (!update_encoders(l) && opmode.opModeIsActive()); }
+    void waitForEncoders (LinearOpMode opmode) { while (!update_encoders(l) && opmode.opModeIsActive()); }
 
 }
