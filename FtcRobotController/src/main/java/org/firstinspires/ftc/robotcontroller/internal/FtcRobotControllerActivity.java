@@ -40,6 +40,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.media.Image;
@@ -119,6 +120,9 @@ public class FtcRobotControllerActivity extends Activity
   {
   public static final String TAG = "RCActivity";
   public String getTag() { return TAG; }
+
+  public Bitmap frontFrame = null;
+  public static final int CAMERA_REQUEST = 3141;
 
   private static final int REQUEST_CONFIG_WIFI_CHANNEL = 1;
   private static final int NUM_GAMEPADS = 2;
@@ -529,6 +533,9 @@ public class FtcRobotControllerActivity extends Activity
     if (request == RequestCode.CONFIGURE_ROBOT_CONTROLLER.ordinal() || request == RequestCode.SETTINGS_ROBOT_CONTROLLER.ordinal()) {
       // We always do a refresh, whether it was a cancel or an OK, for robustness
       cfgFileMgr.getActiveConfigAndUpdateUI();
+    }
+    if (request == CAMERA_REQUEST && result == Activity.RESULT_OK) {
+      frontFrame = (Bitmap) intent.getExtras().get("data");
     }
   }
 

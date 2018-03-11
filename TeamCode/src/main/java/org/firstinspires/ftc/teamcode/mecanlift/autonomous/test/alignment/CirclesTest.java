@@ -1,12 +1,10 @@
 package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test.alignment;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
-import org.firstinspires.ftc.teamcode.visuals.VuforiaHandler;
 
 // Created on 2/10/2018 at 1:24 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.autonomous.test
 
@@ -46,15 +44,15 @@ public class CirclesTest extends OpMode {
         );
 
         telemetry.addData("Status", "Running: " + runtime.toString());
-        telemetry.addData("red", String.format("x: %1$s, y: %2$s, r: %3$s",
-                visuals.red.center.x,
-                visuals.red.center.y,
-                visuals.red.radius
+        telemetry.addData("right", String.format("x: %1$s, y: %2$s, r: %3$s",
+                visuals.right.center.x,
+                visuals.right.center.y,
+                visuals.right.radius
         ));
-        telemetry.addData("blue", String.format("x: %1$s, y: %2$s, r: %3$s",
-                visuals.blue.center.x,
-                visuals.blue.center.y,
-                visuals.blue.radius
+        telemetry.addData("left", String.format("x: %1$s, y: %2$s, r: %3$s",
+                visuals.left.center.x,
+                visuals.left.center.y,
+                visuals.left.radius
         ));
     }
 

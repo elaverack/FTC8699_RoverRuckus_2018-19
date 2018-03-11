@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Enums;
 import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 // Created on 2/3/2018 at 12:04 AM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.autonomous
@@ -19,7 +20,7 @@ public class LinesTest2 extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        robot = new Mecanlift(this, Mecanlift.Color.BLUE, Mecanlift.Position.JEWEL_ONLY);
+        robot = new Mecanlift(this, Enums.Color.BLUE, Enums.Position.JEWEL_ONLY);
 
         telemetry.addData("Status", "Align vert. line with edge of jewel and hor. line with bottom of vumark.");
         telemetry.update();

@@ -28,11 +28,11 @@ public class LinesTest extends OpMode {
     }
 
     @Override
-    public void start() { runtime.reset(); try {visuals.showAlignmentLines();} catch (InterruptedException e) { /*meh*/ } }
+    public void start() { runtime.reset(); visuals.showAlignmentLines(); }
 
     @Override
     public void loop() {
-        try {visuals.tryAlignmentLines(gamepad1.right_stick_x, gamepad1.right_stick_y);} catch (InterruptedException e) { /*meh*/ }
+        visuals.tryAlignmentLines(gamepad1.right_stick_x, gamepad1.right_stick_y);
         telemetry.addData("lines", String.format("x: %1$s, y: %2$s", visuals.vertx, visuals.hory ));
         telemetry.addData("Status", "Running: " + runtime.toString());
     }

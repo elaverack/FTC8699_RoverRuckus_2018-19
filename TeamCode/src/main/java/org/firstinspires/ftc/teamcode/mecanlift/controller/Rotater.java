@@ -8,10 +8,10 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 public class Rotater {
 
     private static final int
-            not_flipped_pre = 100,
-            not_flipped_pos = 0,
-            flipped_pre = 3200,
-            flipped_pos = 3360,
+            not_flipped_pre = 80,
+            not_flipped_pos = 30,
+            flipped_pre = 1580,
+            flipped_pos = 1640,
             flip_position = 1000;   // Position of lift when flipping from ground position
     private static final double
             pre_power = 1,

@@ -2,13 +2,19 @@ package org.firstinspires.ftc.teamcode.visuals;
 
 // Created on 11/1/2017 at 7:52 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.hardware.Camera;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.vuforia.CameraDevice;
 import com.vuforia.Image;
 import com.vuforia.PIXEL_FORMAT;
 import com.vuforia.Vuforia;
+import com.vuforia.VuforiaBase;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
@@ -22,6 +28,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
+import org.firstinspires.ftc.robotcore.internal.vuforia.VuforiaLocalizerImpl;
+
+import static org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity.CAMERA_REQUEST;
 
 public class VuforiaHandler {
 
@@ -31,6 +40,7 @@ public class VuforiaHandler {
     private VuforiaTrackables relicTrackables;
     private VuforiaTrackable relicTemplate;
     private RelicRecoveryVuMark vuMark;
+    private VuforiaLocalizer.Parameters parameters;
 
     private OpenGLMatrix pose;
 
@@ -38,8 +48,6 @@ public class VuforiaHandler {
     public VuforiaHandler(OpMode opmode, boolean doPreview) { op = opmode; init(doPreview); }
 
     private void init(boolean doPreview) {
-
-        VuforiaLocalizer.Parameters parameters;
 
         if (doPreview) {
             parameters = new VuforiaLocalizer.Parameters(
@@ -51,6 +59,11 @@ public class VuforiaHandler {
         parameters.vuforiaLicenseKey = "AfvDu9r/////AAAAGesE+mqXV0hVqVSqU52GJ10v5Scxwd9O/3bf1yzGciRlpe31PP3enyPDvcDbz7KEDxGCONmmpf7+1w7C0PJgkJLNzqxyuHE/pUZlkD37cwnxvJSozZ7I7mx1Vk4Lmw8fAeKlvBAtMCfSeBIPQ89lKkKCuXC7vIjzY66pMmrplByqaq/Ys/TzYkNp8hAwbupsSeykVODtbIbJtgmxeNnSM35zivwcV0hpc5S0oVOoRczJvVxKh5/tzMqH2oQ1fVlNwHhvSnyOGi5L2eoAHyQjsP/96H3vYniltziK13ZmHTM7ncaSC/C0Jt4jL9hHMxvNeFl2Rs7U1u4A+WYJKJ6psFBe2TLJzOwBuzM3KGfZxfkU";
         parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
         parameters.cameraMonitorFeedback = VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES;
+
+        setupVuforia();
+    }
+
+    private void setupVuforia () {
         this.vuforia = ClassFactory.createVuforiaLocalizer(parameters);
 
         Vuforia.setFrameFormat(PIXEL_FORMAT.GRAYSCALE, false);
@@ -61,9 +74,6 @@ public class VuforiaHandler {
         relicTemplate.setName("relicVuMarkTemplate");
 
         vuforia.setFrameQueueCapacity(5);
-
-
-
     }
 
     public void start() { relicTrackables.activate(); }
@@ -77,8 +87,12 @@ public class VuforiaHandler {
 
     public RelicRecoveryVuMark lookingAtMark() { if (!anyVisible()) return null; return vuMark; }
 
-    public Bitmap takePicture() throws InterruptedException {
-        VuforiaLocalizer.CloseableFrame frames = vuforia.getFrameQueue().take();
+    public Bitmap takePicture() {
+        VuforiaLocalizer.CloseableFrame frames = null;
+        try {
+            frames = vuforia.getFrameQueue().take();
+        } catch (InterruptedException e) {}
+        if (frames == null) return null;
         long numImgs = frames.getNumImages();
 
         for (int i = 0; i < numImgs; i++) {
@@ -121,21 +135,71 @@ public class VuforiaHandler {
     }
     public void tellDriverRelPos() { tellDriverRelPos(getRelativePosition()); }
 
-    public class PosRot {
+    public Bitmap frontFrame = null;
+    private Camera camera = null;
+    private Camera.PictureCallback onPic = new Camera.PictureCallback() {
+
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+            frontFrame = BitmapFactory.decodeByteArray(data, 0, data.length);
+//            try {
+//                FileOutputStream fos = new FileOutputStream(pictureFile);
+//                fos.write(data);
+//                fos.close();
+//            } catch (FileNotFoundException e) {
+//                Log.d(TAG, "File not found: " + e.getMessage());
+//            } catch (IOException e) {
+//                Log.d(TAG, "Error accessing file: " + e.getMessage());
+//            }
+        }
+    };
+    public int switchToFrontCamera () {
+        VisualsHandler.phoneLightOff();
+
+        relicTrackables.deactivate();
+        CameraDevice.getInstance().stop();
+        CameraDevice.getInstance().deinit();
+        CameraDevice.getInstance().init(CameraDevice.CAMERA_DIRECTION.CAMERA_DIRECTION_FRONT);
+        CameraDevice.getInstance().start();
+        CameraDevice.getInstance().stop();
+        CameraDevice.getInstance().deinit();
+        CameraDevice.getInstance().init();
+        CameraDevice.getInstance().start();
+
+        Vuforia.deinit();
+        Vuforia.onResume();
+
+        return CameraDevice.getInstance().getCameraDirection();
+    }
+    public void takeFrontPic () {
+//        Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+//        ((Activity)op.hardwareMap.appContext).startActivityForResult(cameraIntent, CAMERA_REQUEST);
+//        CameraDevice.getInstance().stop();
+//        CameraDevice.getInstance().deinit();
+        camera.takePicture(null, null, onPic);
+    }
+
+    public static class PosRot {
         public Vector3 position, rotation;
         public PosRot() { position = new Vector3(); rotation = new Vector3(); }
-        public PosRot(VectorF pos, Orientation rot) { position = new Vector3(pos); rotation = new Vector3(rot); }
+        public PosRot(VectorF pos, Orientation rot) { position = new Vector3(pos); rotation = new Vector3(rot); fix(); }
         public PosRot(OpenGLMatrix pose) {
             position = new Vector3(pose.getTranslation());
             rotation = new Vector3(Orientation.getOrientation(pose, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES));
+            fix();
         }
         public void doAverage (PosRot pr) {
             position = Vector3.average(position, pr.position);
             rotation = Vector3.average(rotation, pr.rotation);
         }
+        public void toInches () { position.mmToInches(); }
         public void teleout (OpMode opmode) {
             position.teleout(opmode, "Position");
             rotation.teleout(opmode, "Rotation");
+        }
+        private void fix() {
+            position = new Vector3(position.x, -position.z, position.y);
+            rotation = new Vector3(rotation.x, rotation.z, rotation.y);
         }
     }
 

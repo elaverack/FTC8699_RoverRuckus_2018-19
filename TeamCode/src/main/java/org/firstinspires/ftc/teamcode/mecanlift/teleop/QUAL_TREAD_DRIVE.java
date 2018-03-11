@@ -25,7 +25,7 @@ public class QUAL_TREAD_DRIVE extends OpMode {
     @Override public void start() { robot.start(); drive.start(); runtime.reset(); }
 
     @Override public void loop() {
-        robot.operateMechanisms();
+        robot.runDrive();
         telemetry.addData("Status", "Running: " + runtime.toString());
     }
 
@@ -34,7 +34,7 @@ public class QUAL_TREAD_DRIVE extends OpMode {
     class runDrive implements Runnable {
 
         public void run() {
-            while (!Thread.interrupted()) { robot.runDrive(); }
+            while (!Thread.interrupted()) { robot.operateMechanisms(); }
             onStop();
         }
 

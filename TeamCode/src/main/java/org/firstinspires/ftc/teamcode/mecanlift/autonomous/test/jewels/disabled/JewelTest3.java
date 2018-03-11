@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test.jewels;
+package org.firstinspires.ftc.teamcode.mecanlift.autonomous.test.jewels.disabled;
 
 import android.view.View;
 import android.view.ViewGroup;
@@ -6,6 +6,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -13,9 +14,9 @@ import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 
 // Created on 11/15/2017 at 7:47 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
-@Autonomous(name = "Jewel Test 4 (3 but split)", group = "test")
-//@Disabled
-public class JewelTest4 extends LinearOpMode {
+@Autonomous(name = "Jewel Test 3 (2 but light)", group = "test")
+@Disabled
+public class JewelTest3 extends LinearOpMode {
 
     private static final int BUTTON_ID = 3141592;
 
@@ -32,7 +33,7 @@ public class JewelTest4 extends LinearOpMode {
         button.setText("Capture");
         button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) { try { vh.takeSaveSplitPic("jt4_pic.png"); } catch (InterruptedException e) {/*meh*/} }
+            public void onClick(View v) { vh.takeAndSavePic("jt3_pic.png"); }
         });
         button.setId(BUTTON_ID);
         button.setLayoutParams(new LinearLayout.LayoutParams(

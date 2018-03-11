@@ -1,8 +1,11 @@
 package org.firstinspires.ftc.teamcode.mecanlift.teleop.test;
 
+import com.qualcomm.hardware.motors.NeveRest40Gearmotor;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -13,11 +16,19 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class RArmTest extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private ContinuousServo armServo;
+    private DcMotor out, in;
 
     @Override
     public void init() {
-        armServo = new ContinuousServo(this, "arm");
+        //armServo = new ContinuousServo(this, "arm");
+        out = hardwareMap.dcMotor.get("out");
+        in = hardwareMap.dcMotor.get("in");
+        out.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        in.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        out.setDirection(DcMotorSimple.Direction.FORWARD);
+        in.setDirection(DcMotorSimple.Direction.FORWARD);
+        out.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        in.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         telemetry.addData("Status", "Initialized");
     }
@@ -29,8 +40,8 @@ public class RArmTest extends OpMode {
     @Override
     public void start() {
         runtime.reset();
-        armServo.stop();
-        hardwareMap.servo.get("jewel").setPosition(1);
+        //armServo.stop();
+        hardwareMap.servo.get("jewel").setPosition(.863);
         hardwareMap.servo.get("bl").setPosition(0.078);
         hardwareMap.servo.get("br").setPosition(0.98);
         hardwareMap.servo.get("tl").setPosition(0.98);
@@ -39,38 +50,15 @@ public class RArmTest extends OpMode {
 
     @Override
     public void loop() {
-        armServo.setPower(-gamepad1.right_stick_y);
+        out.setPower(-gamepad1.right_stick_y);
+        in.setPower(-gamepad1.left_stick_y);
         telemetry.addData("Status", "Running: " + runtime.toString());
     }
 
     @Override
     public void stop() {
-        armServo.stop();
-    }
-
-    class ContinuousServo {
-
-        private Servo s;
-
-        public ContinuousServo (OpMode opMode, String config_name) {
-            s = opMode.hardwareMap.servo.get(config_name);
-        }
-
-        public void stop() {
-            s.setPosition(.5);
-        }
-
-        public void setPower(double power) {
-            if (power > 1) {power = 1.0;} else if (power < -1) {power = -1.0;}
-            power = (power + 1.0)/2.0;
-            s.setPosition(power);
-        }
-
-        public double getPower() {
-            double position = s.getPosition();
-            return (position*2.0) - 1.0;
-        }
-
+        out.setPower(0);
+        in.setPower(0);
     }
 
 }

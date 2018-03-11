@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.visuals;
 // Created on 11/4/2017 at 12:14 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode
 
 import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.hardware.Camera;
@@ -14,13 +13,13 @@ import android.widget.LinearLayout;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.vuforia.CameraDevice;
 
-import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
 import org.firstinspires.ftc.teamcode.R;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
@@ -33,52 +32,32 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.firstinspires.ftc.teamcode.Enums.Color;
+import static org.firstinspires.ftc.teamcode.Enums.JewelConfig;
+
 public class VisualsHandler {
 
-    public enum JEWEL_CONFIG {
-        RED_BLUE("RED_BLUE"), BLUE_RED("BLUE_RED");
+    public final static String TAG = "VisualsHandler";
 
-        public final String toString;
-
-        JEWEL_CONFIG(String ts) {
-            toString = ts;
-        }
-
-        public static JEWEL_CONFIG intCOMs(Point red, Point blue) {
-            if (red.x < blue.x) return RED_BLUE;
-            return BLUE_RED;
-        }
-    }
-    public enum COL_CONFIG {
-        LEFT("LEFT", 1), MID("MIDDLE", 2), RIGHT("RIGHT", 3);
-
-        public final String toString;
-        public final int colNum;;
-        COL_CONFIG(String ts, int cn) {
-            toString = ts; colNum = cn;
-        }
-        public static COL_CONFIG intVuMark(RelicRecoveryVuMark m) {
-            if (m == RelicRecoveryVuMark.LEFT) return LEFT;
-            if (m == RelicRecoveryVuMark.CENTER) return MID;
-            return RIGHT;
-        }
-    }
-
+    /** CONSTANTS */
     private final static int PREVIEW_ID = 314159;
     private final static double
-            SAT_L       = 128,
+            SAT_L       = 180,
             SAT_H       = 255,
-            VAL_L       = 160,
+            VAL_L       = 0,
             VAL_H       = 255,
             RESIZE_FACT = 1;
-    private final float lines_delta = 50f, circlexy_delta = 50f, circler_delta = 10f;
+    private final static float lines_delta = 50f, circlexy_delta = 50f, circler_delta = 10f;
+    final static Scalar
+            RED_L       = new Scalar(128,   0,      0),
+            RED_H       = new Scalar(255,   255,    30),
+            BLUE_L      = new Scalar(0,     0,      128),
+            BLUE_H      = new Scalar(255,   255,    255);
     private final static Scalar
-            RED_L       = new Scalar(0,     SAT_L,  VAL_L),
-            RED_H       = new Scalar(42.5,  SAT_H,  VAL_H),
-            BLUE_L      = new Scalar(127.5, SAT_L,  VAL_L),
-            BLUE_H      = new Scalar(198.3, SAT_H,  VAL_H),
-            RED_C       = new Scalar(255,0,0), 
-            BLUE_C      = new Scalar(0,0,255);
+            blue_hsv_low    = new Scalar(128,   SAT_L,  VAL_L), // Blue side crypto low
+            blue_hsv_high   = new Scalar(191,   SAT_H,  VAL_H), // Blue side crypto high
+            red_hsv_low     = new Scalar(0,     SAT_L,  VAL_L), // Red side crypto low
+            red_hsv_high    = new Scalar(21,    SAT_H,  VAL_H); // Red side crypto high
     private final static Size JEWELS_BSIZE = new Size(4,4);
     private final static String[] splitEnds = new String[]{
             " red.png",
@@ -90,31 +69,20 @@ public class VisualsHandler {
     };
     private final String PHOTO_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
 
-
+    /** VARIABLES */
     public int vertx = 20, hory = 20;
-    public AlignmentCircle 
-            red = new AlignmentCircle(new Point(20,20), 50), 
-            blue = new AlignmentCircle(new Point(200,20), 50);
+    public AlignmentCircle
+            right = new AlignmentCircle(new Point(621, 1095), 80),
+            left = new AlignmentCircle(new Point(378, 1107), 80);
 
     public VuforiaHandler vuforia;
     public LayoutInterfacer layout;
 
-    public JEWEL_CONFIG jewel_config;
-    public COL_CONFIG column_config;
+    public JewelConfig jewelConfig = JewelConfig.ERROR;
 
     private OpMode opmode;
     private boolean hasLight = false, light = false;
 
-    @Deprecated public VisualsHandler(OpMode om) {
-        opmode = om;
-        vuforia = new VuforiaHandler(opmode,false);
-        OpenCVLoader.initDebug();
-        // Initialize preview
-        ImageView iv = new ImageView(opmode.hardwareMap.appContext);
-        iv.setId(PREVIEW_ID);
-        layout = new LayoutInterfacer(opmode, getPreviewContainer(), iv);
-        setPreview(generateIntro(getPreviewContainer().getWidth()));
-    }
     public VisualsHandler(OpMode om, boolean doVuforiaPreview) {
         opmode = om;
         //hasLight = opmode.hardwareMap.appContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
@@ -137,58 +105,6 @@ public class VisualsHandler {
 
     public static void phoneLightOn () { CameraDevice.getInstance().setFlashTorchMode(true); }
     public static void phoneLightOff () { CameraDevice.getInstance().setFlashTorchMode(false); }
-    @Deprecated public void togglePhoneLight () {
-        if (!hasLight) return;
-        Camera c = Camera.open();
-        Camera.Parameters p = c.getParameters();
-        if (light) {
-            p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-            c.setParameters(p);
-            light = false; return;
-        }
-        p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-        c.setParameters(p);
-        light = true;
-    }
-    @Deprecated private void turnOffPhoneLight () {
-        if (!hasLight) return;
-        Camera c = Camera.open();
-        Camera.Parameters p = c.getParameters();
-        p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-        c.setParameters(p);
-    }
-
-    public void checkJewels() throws InterruptedException {
-        Mat
-                start = new Mat(),
-                red = new Mat(),
-                blue = new Mat();
-
-        Imgproc.cvtColor(takeMatPicture(), start, Imgproc.COLOR_RGB2HSV_FULL);
-        Imgproc.resize(start,start,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-
-        Imgproc.blur(start, start, JEWELS_BSIZE);
-
-        Core.inRange(start, RED_L, RED_H, red);
-        Core.inRange(start, BLUE_L, BLUE_H, blue);
-
-        jewel_config = JEWEL_CONFIG.intCOMs(getCOM(red), getCOM(blue));
-    }
-    public void checkJewels(Mat start) throws InterruptedException {
-        Mat
-                red = new Mat(),
-                blue = new Mat();
-
-        Imgproc.cvtColor(takeMatPicture(), start, Imgproc.COLOR_RGB2HSV_FULL);
-        Imgproc.resize(start,start,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-
-        Imgproc.blur(start, start, JEWELS_BSIZE);
-
-        Core.inRange(start, RED_L, RED_H, red);
-        Core.inRange(start, BLUE_L, BLUE_H, blue);
-
-        jewel_config = JEWEL_CONFIG.intCOMs(getCOM(red), getCOM(blue));
-    }
 
     public void setPreview(final Bitmap image) { if (image == null) return; layout.run(new Runnable() {
             @Override
@@ -202,161 +118,253 @@ public class VisualsHandler {
     }
     public void setBRGPreview(Mat image) { Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2RGB); setPreview(image); }
     public void setHSVPreview(Mat image) { Imgproc.cvtColor(image, image, Imgproc.COLOR_HSV2RGB_FULL); setPreview(image); }
-    public void previewVuforia() throws InterruptedException { setPreview(fixBitmap(vuforia.takePicture())); }
-    public void previewJewels() throws InterruptedException {
+    public void previewVuforia() { setPreview(fixBitmap(vuforia.takePicture())); }
+    public void previewJewels () {
         Mat
-                start = new Mat(),
-                red = new Mat(),
-                blue = new Mat(),
-                jewels;
-        final Point
-                RCOM,
-                BCOM;
+                start = takeMatPicture(),
+                rightc = new Mat(start.rows(), start.cols(), start.type()),
+                leftc = rightc.clone(),
+                preview = new Mat();
 
-        Imgproc.cvtColor(takeMatPicture(), start, Imgproc.COLOR_RGB2HSV_FULL);
-        Imgproc.resize(start,start,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+        rightc.setTo(this.right.getJewelColor(start).toScalar());
+        this.right.isolate(rightc);
 
-        Imgproc.blur(start, start, JEWELS_BSIZE);
+        leftc.setTo(this.left.getJewelColor(start).toScalar());
+        this.left.isolate(leftc);
 
-        Core.inRange(start, RED_L, RED_H, red);
-        Core.inRange(start, BLUE_L, BLUE_H, blue);
+        Core.add(rightc, leftc, preview);
 
-        RCOM = getCOM(red); BCOM = getCOM(blue);
-        jewel_config = JEWEL_CONFIG.intCOMs(RCOM, BCOM);
+        setPreview(preview);
 
-        // Preview
-        jewels = start; // Note: start is hsv, but we are going to treat jewels as RGB
-        jewels.setTo(new Scalar(0,0,0));
-        Imgproc.cvtColor(red, red, Imgproc.COLOR_GRAY2RGB);
-        Imgproc.cvtColor(blue, blue, Imgproc.COLOR_GRAY2RGB);
-        Core.multiply(red, (new Mat(red.rows(), red.cols(), red.type())).setTo(new Scalar(255,0,0)), red);
-        Core.multiply(blue, (new Mat(blue.rows(), blue.cols(), blue.type())).setTo(new Scalar(0,0,255)), blue);
-        Core.add(red,blue,jewels);
-        Imgproc.circle(jewels, RCOM, 10, new Scalar(255,255,0), -1);
-        Imgproc.circle(jewels, BCOM, 10, new Scalar(0,255,255), -1);
-        setPreview(jewels);
     }
+    public List<Point> previewCryptobox (Color allianceColor) {
+        Mat
+                start = takeMatPicture(),               // Starting image
+                hsv = new Mat(),                        // Image in HSV
+                lines = new Mat(),                      // For HoughLinesP
+                hierarchy = new Mat(),                  // For contour finding
+                end = new Mat(),                        // End result
+                preview = new Mat();                    // Image for preview
+        List<MatOfPoint> contours = new ArrayList<>();  // List for contour finding
+        List<Point> coms = new ArrayList<>();           // List of COMs
 
-    public void showAlignmentLines () throws InterruptedException {
-        Mat img = new Mat();
-        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-        drawVert(img, vertx);
-        drawHor(img, hory);
-        setPreview(img);
-    }
-    public void tryAlignmentLines (float vert, float hor) throws InterruptedException {
-        if (vert == 0 && hor == 0) return;
-        Mat img = new Mat();
-        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-        if (vert != 0) {
-            vertx += (int)(vert*lines_delta);
-            if (vertx < 0) vertx = 0;
-            if (vertx > img.width()) vertx = img.width();
-            drawVert(img, vertx);
-            drawHor(img, hory);
-            setPreview(img);
+        Imgproc.cvtColor(start, hsv, Imgproc.COLOR_RGB2HSV_FULL); // Convert start to HSV for masking
+
+        if (allianceColor == Color.RED) { // Mask the image
+            Core.inRange(hsv, red_hsv_low, red_hsv_high, end);
+        } else Core.inRange(hsv, blue_hsv_low, blue_hsv_high, end);
+
+        // Close the holes in the mask
+        Imgproc.morphologyEx(end, end, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(6, 6)));
+
+        // Look for the big vertical separators of the cryptobox in the mask
+        Imgproc.HoughLinesP(end, lines, 50, Math.PI, 100, end.rows() * 2 / 3, 75);
+        end.setTo(new Scalar(0));
+        Mat tempPreview = new Mat(start.rows(), start.cols(), start.type());
+
+        // Draw them into one image
+        for (int i = 0; i < lines.rows(); i++) {
+            double[] val = lines.get(i, 0);
+            if (val == null) continue;
+            Imgproc.line(end, new Point(val[0], val[1]), new Point(val[2], val[3]), new Scalar(255), 10);
+            Imgproc.line(tempPreview, new Point(val[0], val[1]), new Point(val[2], val[3]), new Scalar(255, 255, 255), 10);
         }
-        if (hor != 0) {
-            hory += (int)(hor*lines_delta);
-            if (hory < 0) hory = 0;
-            if (hory > img.height()) hory = img.height();
-            drawVert(img, vertx);
-            drawHor(img, hory);
-            setPreview(img);
+
+        // Close holes caused by line drawing
+        Imgproc.morphologyEx(end, end,
+                Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(6, 6)));
+        Imgproc.morphologyEx(tempPreview, tempPreview,
+                Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(6, 6)));
+
+        // Find each individual divider and store its center of mass
+        Imgproc.findContours(end, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        for (int i = 0; i < contours.size(); i++) {
+            Mat divider = new Mat(end.rows(), end.cols(), end.type());
+            Imgproc.drawContours(divider, contours, i, new Scalar(255), -1);
+            coms.add(getCOM(divider));
         }
+
+        Core.subtract(start, tempPreview, preview);
+        Core.subtract(start, preview, preview);
+
+        // Draw a circle for each center of mass
+        for (Point com : coms) {
+            Imgproc.circle(end, com, 25, new Scalar(128), -1);
+            Imgproc.circle(preview, com, 25, new Scalar(0, 255, 0), -1);
+        }
+
+        // Lastly, set the preview window to the result
+        setPreview(preview);
+
+        return coms;
+
+        // NOTE: C# code below
+//        MCvScalar
+//                rgb_low = new MCvScalar(0, 0, 0),
+//                rgb_high = new MCvScalar(30, 30, 255),
+//                hsv_low = new MCvScalar(128, 180, 0),
+//                hsv_high = new MCvScalar(191, 255, 255);
+//
+//        showRGBImg ("crypto", rgb, .5);
+//
+//        //splitRGB(rgb, .5);
+//
+//        //splitHSV(hsv, .5);
+//
+//        //Mat blur = converted.Clone();
+//        //Blur(blur, blur, new Size(4, 4), new Point(-1, -1));
+//        //Mat dst = new Mat();
+//        //Canny(blur, dst, 30, 60);
+//        //showImg("edged", dst);
+//        Mat hsvm = showMask("hsvmask", hsv, hsv_low, hsv_high, .5);
+//        //showMask("rgbmask", rgb, rgb_low, rgb_high, .5);
+//
+//        MorphologyEx(hsvm, hsvm, Emgu.CV.CvEnum.MorphOp.Close,
+//                GetStructuringElement(
+//                        Emgu.CV.CvEnum.ElementShape.Rectangle, new Size(2, 6), new Point(-1, -1)
+//                ),
+//                new Point(-1, -1), 1, Emgu.CV.CvEnum.BorderType.Constant, MorphologyDefaultBorderValue
+//        );
+//        MorphologyEx(hsvm, hsvm, Emgu.CV.CvEnum.MorphOp.Close,
+//                GetStructuringElement(
+//                        Emgu.CV.CvEnum.ElementShape.Rectangle, new Size(6, 2), new Point(-1, -1)
+//                ),
+//                new Point(-1, -1), 1, Emgu.CV.CvEnum.BorderType.Constant, MorphologyDefaultBorderValue
+//        );
+//        //showImg("hsvm closed", hsvm, .5);
+//        Mat hsvlines = emptyMat(hsvm);
+//
+//        LineSegment2D[] lines = HoughLinesP(hsvm, 50, Math.PI, 100, 1000, 75);
+//        foreach (LineSegment2D line in lines) Line(hsvlines, line.P1, line.P2, new MCvScalar(255), 10);
+//        //showImg("lines", hsvlines, .5);
+//
+//        Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+//        Mat hierarchy = new Mat();
+//        //Mat con = emptyMat(hsvlines, 1);
+//
+//        FindContours(hsvlines, contours, hierarchy,
+//                Emgu.CV.CvEnum.RetrType.External, Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+//        //Random rand = new Random();
+//        //for (int i = 0; i < contours.Size; i++) {
+//        //    DrawContours(con, contours, i, new MCvScalar(( rand.NextDouble() + .01 ) * ( 254 )), 10);
+//        //}
+//        //showImg("contours", con);
+//        Mat[] dividers = showSplitContours("lines", hsvlines, contours, .5);
+//        for (int i = 0; i < dividers.Length; i++) {
+//            Point com = getCOM(dividers[i]);
+//            Circle(hsvlines, com, 25, new MCvScalar(128), -1);
+//        }
+//        showImg("final", hsvlines, .5);
     }
+
+    public static List<Point> processCryptobox (Mat start, Color allianceColor) {
+        Mat // Assuming start is RGB
+                hsv = new Mat(),                                                // Image in HSV
+                mask = new Mat(),                                               // HSV mask
+                lines = new Mat(),                                              // For HoughLinesP
+                linesR = new Mat(start.rows(), start.cols(), CvType.CV_8UC1),   // HoughLinesP results
+                hierarchy = new Mat();                                          // For contour finding
+        List<Point> ret = new ArrayList<>();                                    // List of COMs
+        List<MatOfPoint> contours = new ArrayList<>();                          // For contour finding
+
+        Imgproc.cvtColor(start, hsv, Imgproc.COLOR_RGB2HSV_FULL); // Convert start to HSV for masking
+
+        if (allianceColor == Color.RED) { // Mask the image
+            Core.inRange(hsv, red_hsv_low, red_hsv_high, mask);
+        } else Core.inRange(hsv, blue_hsv_low, blue_hsv_high, mask);
+
+        // Close the holes in the mask
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(6,6)));
+
+        // Look for the big vertical separators of the cryptobox in the mask
+        Imgproc.HoughLinesP(mask, lines, 50, Math.PI, 100, mask.rows() * 2 / 3, 75);
+
+        // Draw them into one image
+        for(int i = 0; i < lines.rows(); i++) {
+            double[] val = lines.get(i, 0);
+            if (val == null) continue;
+            Imgproc.line(linesR, new Point(val[0], val[1]), new Point(val[2], val[3]), new Scalar(255), 10);
+        }
+
+        // Close holes caused by line drawing
+        Imgproc.morphologyEx(linesR, linesR, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(6,6)));
+
+        // Find each individual divider and store its center of mass
+        Imgproc.findContours(linesR, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        for (int i = 0; i < contours.size(); i++) {
+            Mat divider = new Mat(linesR.rows(), linesR.cols(), linesR.type());
+            Imgproc.drawContours(divider, contours, i, new Scalar(255), -1);
+            ret.add(getCOM(divider));
+        }
+
+        return ret;
+    }
+    public List<Point> processCryptobox (Color allianceColor) {
+        return processCryptobox(takeMatPicture(), allianceColor);
+    }
+
+    public void checkJewelsWithCamera () {
+        Mat img = takeMatPicture();
+        jewelConfig = JewelConfig.intCircles(left.getJewelColor(img), right.getJewelColor(img));
+    }
+
     public void showAlignmentCircles () {
         Mat img = new Mat();
-        try {
-            Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-        } catch (InterruptedException e) {}
-        red.draw(img, RED_C);
-        blue.draw(img, BLUE_C);
+        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+        right.draw(img, Color.ERROR.toScalar());
+        left.draw(img, Color.ERROR.toScalar());
+        putWarning(img);
         setPreview(img);
     }
     public void tryAlignmentCircles (float redx, float redy, float redr, float bluex, float bluey, float bluer) {
         if (redx == 0 && redy == 0 && redr == 0 && bluex == 0 && bluey == 0 && bluer == 0) return;
         Mat img = new Mat();
-        try {
-            Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-        } catch (InterruptedException e) {}
+        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
         if (redx != 0) {
-            red.center.x += (int)(redx*circlexy_delta);
-            if (red.center.x < 0) red.center.x = 0;
-            if (red.center.x > img.width()) red.center.x = img.width();
-            red.draw(img, RED_C);
-            blue.draw(img, BLUE_C);
+            right.center.x += (int)(redx*circlexy_delta);
+            if (right.center.x < 0) right.center.x = 0;
+            if (right.center.x > img.width()) right.center.x = img.width();
         }
         if (redy != 0) {
-            red.center.y += (int)(redy*circlexy_delta);
-            if (red.center.y < 0) red.center.y = 0;
-            if (red.center.y > img.height()) red.center.y = img.height();
-            red.draw(img, RED_C);
-            blue.draw(img, BLUE_C);
+            right.center.y += (int)(redy*circlexy_delta);
+            if (right.center.y < 0) right.center.y = 0;
+            if (right.center.y > img.height()) right.center.y = img.height();
         }
-        if (redr != 0) {
-            red.radius += (int)(redr*circler_delta);
-            if (red.radius < 1) red.radius = 1;
-            red.draw(img, RED_C);
-            blue.draw(img, BLUE_C);
-        }
+        if (redr != 0) { right.radius += (int)(redr*circler_delta); if (right.radius < 1) right.radius = 1; }
         if (bluex != 0) {
-            blue.center.x += (int)(bluex*circlexy_delta);
-            if (blue.center.x < 0) blue.center.x = 0;
-            if (blue.center.x > img.width()) blue.center.x = img.width();
-            red.draw(img, RED_C);
-            blue.draw(img, BLUE_C);
+            left.center.x += (int)(bluex*circlexy_delta);
+            if (left.center.x < 0) left.center.x = 0;
+            if (left.center.x > img.width()) left.center.x = img.width();
         }
         if (bluey != 0) {
-            blue.center.y += (int)(bluey*circlexy_delta);
-            if (blue.center.y < 0) blue.center.y = 0;
-            if (blue.center.y > img.height()) blue.center.y = img.height();
-            red.draw(img, RED_C);
-            blue.draw(img, BLUE_C);
+            left.center.y += (int)(bluey*circlexy_delta);
+            if (left.center.y < 0) left.center.y = 0;
+            if (left.center.y > img.height()) left.center.y = img.height();
         }
-        if (bluer != 0) {
-            blue.radius += (int)(bluer*circler_delta);
-            if (blue.radius < 1) blue.radius = 1;
-            red.draw(img, RED_C);
-            blue.draw(img, BLUE_C);
-        }
+        if (bluer != 0) { left.radius += (int)(bluer*circler_delta); if (left.radius < 1) left.radius = 1; }
+        right.draw(img, Color.ERROR.toScalar());
+        left.draw(img, Color.ERROR.toScalar());
         setPreview(img);
     }
 
-    public static Point getCOM(Mat image, Scalar colorHigh, Scalar colorLow) {
-        Mat mask = mask(image, colorHigh, colorLow);
-        Moments mmnts = Imgproc.moments(mask,true);
-        return new Point((mmnts.get_m10()/mmnts.get_m00()),(mmnts.get_m01()/mmnts.get_m00()));
-    }
-    public static Point getCOM(Mat binaryImage) {
+    private static Point getCOM(Mat binaryImage) {
         Moments mmnts = Imgproc.moments(binaryImage,true);
         return new Point((mmnts.get_m10()/mmnts.get_m00()),(mmnts.get_m01()/mmnts.get_m00()));
     }
 
-    public void previewMask(Mat image, Scalar colorHigh, Scalar colorLow) { Mat mask = mask(image, colorHigh, colorLow); setPreview(mask); }
-    public void previewCOM(Mat image, Scalar colorHigh, Scalar colorLow) {
-        Imgproc.circle(image, getCOM(image, colorHigh, colorLow), 10, new Scalar(0,0,255));
-        setPreview(image);
-    }
+    public Mat takeMatPicture() { return BitmapToMat(fixBitmap(vuforia.takePicture())); }
 
-    public Mat takeMatPicture() throws InterruptedException { return BitmapToMat(fixBitmap(vuforia.takePicture())); }
+    public Mat takeAndSavePic(String name) { Mat ret = takeMatPicture(); savePhoto(ret, name); return ret; }
+    public Mat takeSaveSplitPic(String name) { Mat ret = takeMatPicture(); saveSplitPhoto(ret, name); return ret; }
 
-    public Mat takeAndSavePic(String name) throws InterruptedException { Mat ret = takeMatPicture(); savePhoto(ret, name); return ret; }
-    public Mat takeSaveSplitPic(String name) throws InterruptedException { Mat ret = takeMatPicture(); saveSplitPhoto(ret, name); return ret; }
-
-    public static Bitmap fixBitmap(Bitmap orig) {
+    private static Bitmap fixBitmap(Bitmap orig) {
+        if (orig == null) return null;
         Matrix matrix = new Matrix();
         matrix.postRotate(90);
         return Bitmap.createBitmap(orig,0,0,orig.getWidth(),orig.getHeight(),matrix,true);
     }
-
-    public static Mat mask(Mat image, Scalar colorHigh, Scalar colorLow) {
-        Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2HSV_FULL);
-        Mat mask = new Mat();
-        Core.inRange(image, colorLow, colorHigh, mask);
-        return mask;
-    }
-
     private static Mat BitmapToMat(Bitmap orig) {
         if (orig == null) return null;
         Mat image = new Mat(orig.getHeight(), orig.getWidth(), CvType.CV_8UC3);
@@ -394,6 +402,25 @@ public class VisualsHandler {
         return intro;
     }
 
+    private static void putWarning (Mat orig) {
+        String l1 = "PRESS", l2 = "HERE";
+        int size = 6, line_spacing = 35, top_margin = 200, thickness = 15, font = Core.FONT_HERSHEY_SIMPLEX;
+        Scalar color = new Scalar(255,0,0);
+
+        Size[] boxes = new Size[]{
+                Imgproc.getTextSize(l1, font, size, thickness, new int[1]),
+                Imgproc.getTextSize(l2, font, size, thickness, new int[1])
+        };
+
+        Point[] points = new Point[] {
+                new Point((orig.cols()-boxes[0].width)/2, top_margin + boxes[0].height),
+                new Point((orig.cols()-boxes[1].width)/2, top_margin + line_spacing + boxes[0].height + boxes[1].height)
+        };
+
+        Imgproc.putText(orig, l1, points[0], font, size, color, thickness);
+        Imgproc.putText(orig, l2, points[1], font, size, color, thickness);
+    }
+
     private static Mat drawVert(Mat mat, int x) {
         Imgproc.line(mat, new Point(x,0), new Point(x,mat.height()), new Scalar(255,0,0), 8);
         return mat;
@@ -425,7 +452,6 @@ public class VisualsHandler {
         }
 
     }
-
     /**
      * Take an image (mat), save it to the save directory, then split the rgb and hsv and save those to a folder.
      * @param toSplit The image to save and split.
@@ -489,6 +515,146 @@ public class VisualsHandler {
 
         }
         
+    }
+
+    /** DEPRECATED */
+    @Deprecated public void previewMask(Mat image, Scalar colorHigh, Scalar colorLow) { Mat mask = mask(image, colorHigh, colorLow); setPreview(mask); }
+    @Deprecated public void previewCOM(Mat image, Scalar colorHigh, Scalar colorLow) {
+        Imgproc.circle(image, getCOM(image, colorHigh, colorLow), 10, new Scalar(0,0,255));
+        setPreview(image);
+    }
+    @Deprecated public void showAlignmentLines () {
+        Mat img = new Mat();
+        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+        drawVert(img, vertx);
+        drawHor(img, hory);
+        setPreview(img);
+    }
+    @Deprecated public void tryAlignmentLines (float vert, float hor) {
+        if (vert == 0 && hor == 0) return;
+        Mat img = new Mat();
+        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+        if (vert != 0) {
+            vertx += (int)(vert*lines_delta);
+            if (vertx < 0) vertx = 0;
+            if (vertx > img.width()) vertx = img.width();
+            drawVert(img, vertx);
+            drawHor(img, hory);
+            setPreview(img);
+        }
+        if (hor != 0) {
+            hory += (int)(hor*lines_delta);
+            if (hory < 0) hory = 0;
+            if (hory > img.height()) hory = img.height();
+            drawVert(img, vertx);
+            drawHor(img, hory);
+            setPreview(img);
+        }
+    }
+    @Deprecated private static Mat mask(Mat image, Scalar colorHigh, Scalar colorLow) {
+        Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2HSV_FULL);
+        Mat mask = new Mat();
+        Core.inRange(image, colorLow, colorHigh, mask);
+        return mask;
+    }
+    @Deprecated private static Point getCOM(Mat image, Scalar colorHigh, Scalar colorLow) {
+        Mat mask = mask(image, colorHigh, colorLow);
+        Moments mmnts = Imgproc.moments(mask,true);
+        return new Point((mmnts.get_m10()/mmnts.get_m00()),(mmnts.get_m01()/mmnts.get_m00()));
+    }
+    @Deprecated public void previewOldJewels() {
+        Mat
+                start = new Mat(),
+                red = new Mat(),
+                blue = new Mat(),
+                jewels;
+        final Point
+                RCOM,
+                BCOM;
+
+        Imgproc.cvtColor(takeMatPicture(), start, Imgproc.COLOR_RGB2HSV_FULL);
+        Imgproc.resize(start,start,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+
+        Imgproc.blur(start, start, JEWELS_BSIZE);
+
+        Core.inRange(start, RED_L, RED_H, red);
+        Core.inRange(start, BLUE_L, BLUE_H, blue);
+
+        RCOM = getCOM(red); BCOM = getCOM(blue);
+        jewelConfig = JewelConfig.intCOMs(RCOM, BCOM);
+
+        // Preview
+        jewels = start; // Note: start is hsv, but we are going to treat jewels as RGB
+        jewels.setTo(new Scalar(0,0,0));
+        Imgproc.cvtColor(red, red, Imgproc.COLOR_GRAY2RGB);
+        Imgproc.cvtColor(blue, blue, Imgproc.COLOR_GRAY2RGB);
+        Core.multiply(red, (new Mat(red.rows(), red.cols(), red.type())).setTo(new Scalar(255,0,0)), red);
+        Core.multiply(blue, (new Mat(blue.rows(), blue.cols(), blue.type())).setTo(new Scalar(0,0,255)), blue);
+        Core.add(red,blue,jewels);
+        Imgproc.circle(jewels, RCOM, 10, new Scalar(255,255,0), -1);
+        Imgproc.circle(jewels, BCOM, 10, new Scalar(0,255,255), -1);
+        setPreview(jewels);
+    }
+    @Deprecated public void togglePhoneLight () {
+        if (!hasLight) return;
+        Camera c = Camera.open();
+        Camera.Parameters p = c.getParameters();
+        if (light) {
+            p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+            c.setParameters(p);
+            light = false; return;
+        }
+        p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+        c.setParameters(p);
+        light = true;
+    }
+    @Deprecated private void turnOffPhoneLight () {
+        if (!hasLight) return;
+        Camera c = Camera.open();
+        Camera.Parameters p = c.getParameters();
+        p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+        c.setParameters(p);
+    }
+    @Deprecated public void checkJewels() {
+        Mat
+                start = new Mat(),
+                red = new Mat(),
+                blue = new Mat();
+
+        Imgproc.cvtColor(takeMatPicture(), start, Imgproc.COLOR_RGB2HSV_FULL);
+        Imgproc.resize(start,start,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+
+        Imgproc.blur(start, start, JEWELS_BSIZE);
+
+        Core.inRange(start, RED_L, RED_H, red);
+        Core.inRange(start, BLUE_L, BLUE_H, blue);
+
+        jewelConfig = JewelConfig.intCOMs(getCOM(red), getCOM(blue));
+    }
+    @Deprecated public void checkJewels(Mat start) {
+        Mat
+                red = new Mat(),
+                blue = new Mat();
+
+        Imgproc.cvtColor(takeMatPicture(), start, Imgproc.COLOR_RGB2HSV_FULL);
+        Imgproc.resize(start,start,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
+
+        Imgproc.blur(start, start, JEWELS_BSIZE);
+
+        Core.inRange(start, RED_L, RED_H, red);
+        Core.inRange(start, BLUE_L, BLUE_H, blue);
+
+        jewelConfig = JewelConfig.intCOMs(getCOM(red), getCOM(blue));
+    }
+    @Deprecated public VisualsHandler(OpMode om) {
+        opmode = om;
+        vuforia = new VuforiaHandler(opmode,false);
+        OpenCVLoader.initDebug();
+        // Initialize preview
+        ImageView iv = new ImageView(opmode.hardwareMap.appContext);
+        iv.setId(PREVIEW_ID);
+        layout = new LayoutInterfacer(opmode, getPreviewContainer(), iv);
+        setPreview(generateIntro(getPreviewContainer().getWidth()));
     }
 
 }

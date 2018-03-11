@@ -2,14 +2,14 @@ package org.firstinspires.ftc.teamcode.mecanlift.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Enums;
 import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 // Created on 2/10/2018 at 2:27 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.autonomous.test
 
-@Autonomous(name = "QUAL_BC_AUTO", group = "test")
+@Autonomous(name = "QUAL_BC_AUTO", group = "Iterative Opmode")
 //@Disabled
 public class BC_AUTO extends LinearOpMode {
 
@@ -19,7 +19,7 @@ public class BC_AUTO extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        robot = new Mecanlift(this, Mecanlift.Color.BLUE, Mecanlift.Position.CORNER);
+        robot = new Mecanlift(this, Enums.Color.BLUE, Enums.Position.CORNER);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
