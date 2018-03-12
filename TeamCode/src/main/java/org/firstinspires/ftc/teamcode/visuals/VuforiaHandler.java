@@ -30,8 +30,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.internal.vuforia.VuforiaLocalizerImpl;
 
-import static org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity.CAMERA_REQUEST;
-
 public class VuforiaHandler {
 
     private OpMode op;

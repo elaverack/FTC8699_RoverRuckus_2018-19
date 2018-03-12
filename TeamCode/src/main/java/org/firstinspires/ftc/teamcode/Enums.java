@@ -170,6 +170,43 @@ public class Enums {
             }
         }
 
+        public double doCryptoboxLogic (Color allianceColor, Position alliancePosition, double[] divs) {
+            double ret = 0, ppi, phone_dis;
+            
+            switch (divs.length) {
+                case 0: return 8;
+                case 1:
+                    double x = divs[0]; ret = 3;
+                    if (allianceColor == Color.BLUE) { if (x > 630) ret = 8; else if (x > 480) ret = 6; }
+                    else if (x < 90) ret = 8; else if (x < 240) ret = 6;
+                    return ret;
+                case 2: ppi = Math.abs(divs[1] - divs[0]) / 7.65; break;
+                case 3: ppi = Math.abs(divs[2] - divs[0]) / 15.3; break;
+                default: return ret;
+            }
+
+            if (allianceColor == Color.RED && alliancePosition == Position.CORNER) {
+                phone_dis = (360 - divs[1]) / ppi;
+                ret = phone_dis + 6.514;
+                switch (this) {
+                    case LEFT: return ret + 15.3;
+                    case RIGHT: return ret;
+                    case CENTER: return ret + 7.65;
+                    default: return ret;
+                }
+            } else {
+                phone_dis = (divs[0] - 360) / ppi;
+                ret = phone_dis - 1.136;
+                switch (this) {
+                    case LEFT: return ret;
+                    case RIGHT: return ret + 15.3;
+                    case CENTER: return ret + 7.65;
+                    default: return ret;
+                }
+            }
+
+        }
+
         public String toString() {
             switch (this) {
                 case LEFT:      return "LEFT";

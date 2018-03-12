@@ -421,15 +421,6 @@ public class VisualsHandler {
         Imgproc.putText(orig, l2, points[1], font, size, color, thickness);
     }
 
-    private static Mat drawVert(Mat mat, int x) {
-        Imgproc.line(mat, new Point(x,0), new Point(x,mat.height()), new Scalar(255,0,0), 8);
-        return mat;
-    }
-    private static Mat drawHor(Mat mat, int y) {
-        Imgproc.line(mat, new Point(0,y), new Point(mat.width(),y), new Scalar(255,0,0), 8);
-        return mat;
-    }
-
     private void savePhoto (Mat mat, String fileName) {
 
         Bitmap bmp = Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.RGB_565);
@@ -550,6 +541,14 @@ public class VisualsHandler {
             drawHor(img, hory);
             setPreview(img);
         }
+    }
+    @Deprecated private static Mat drawVert(Mat mat, int x) {
+        Imgproc.line(mat, new Point(x,0), new Point(x,mat.height()), new Scalar(255,0,0), 8);
+        return mat;
+    }
+    @Deprecated private static Mat drawHor(Mat mat, int y) {
+        Imgproc.line(mat, new Point(0,y), new Point(mat.width(),y), new Scalar(255,0,0), 8);
+        return mat;
     }
     @Deprecated private static Mat mask(Mat image, Scalar colorHigh, Scalar colorLow) {
         Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2HSV_FULL);

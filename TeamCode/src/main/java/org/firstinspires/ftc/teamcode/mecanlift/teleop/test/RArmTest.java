@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.mecanlift.teleop.test;
 
-import com.qualcomm.hardware.motors.NeveRest40Gearmotor;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -27,8 +26,8 @@ public class RArmTest extends OpMode {
         in.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         out.setDirection(DcMotorSimple.Direction.FORWARD);
         in.setDirection(DcMotorSimple.Direction.FORWARD);
-        out.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        in.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        out.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        in.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         telemetry.addData("Status", "Initialized");
     }
@@ -41,7 +40,7 @@ public class RArmTest extends OpMode {
     public void start() {
         runtime.reset();
         //armServo.stop();
-        hardwareMap.servo.get("jewel").setPosition(.863);
+        hardwareMap.servo.get("jewel").setPosition(.793);
         hardwareMap.servo.get("bl").setPosition(0.078);
         hardwareMap.servo.get("br").setPosition(0.98);
         hardwareMap.servo.get("tl").setPosition(0.98);

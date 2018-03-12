@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.GyroSensor;
+import com.qualcomm.robotcore.hardware.I2cController;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -28,7 +29,7 @@ import java.util.List;
 import static org.firstinspires.ftc.teamcode.Enums.*;
 import static org.firstinspires.ftc.teamcode.visuals.Vector3.round;
 
-public class Mecanlift { // ultrasonic sensor is "ultra"
+public class Mecanlift {
 
     /** CONSTANTS */
     private static final double                         // Grabber servo positions
@@ -47,7 +48,7 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
             strafing_inches_per_rev = 10.34,            // Inches strafed for one wheel revolution
             drive_distance_acceleration = 1.0/6000.0,   // Acceleration for driving distances
 
-            div_threshold = 50;                         // Threshold for combining divs in picture
+            div_threshold = 100;                         // Threshold for combining divs in picture
 
     private static final int
             flip_position = 1000,                       // Position of lift when flipping from ground position
@@ -60,6 +61,11 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
     private static final AlignmentCircle
             right = new AlignmentCircle(new Point(641, 1105), 80),
             left = new AlignmentCircle(new Point(378, 1107), 80);
+
+    private static final I2cController.I2cPortReadyCallback callback = new I2cController.I2cPortReadyCallback() {
+        @Override
+        public void portIsReady(int port) { debug("I'm amazing..."); }
+    };
 
     private static final String
             TAG = "Mecanlift",
@@ -129,11 +135,15 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
     public Mecanlift (OpMode om) { init(om, false, Color.ERROR, Position.ERROR); } // USE IF TELEOP
     public Mecanlift (OpMode om, Color allianceColor, Position alliancePosition) { init(om, true, allianceColor, alliancePosition); }
     private void init (OpMode om, boolean auto, Color ac, Position ap) {
+        debug("---- BEGIN INIT ----");
+
         opmode = om;
         allianceColor = ac;
         alliancePosition = ap;
 
         /** DRIVE */
+        debug("Setting up drive...");
+
         rf = opmode.hardwareMap.dcMotor.get(drive_rfN);
         rb = opmode.hardwareMap.dcMotor.get(drive_rbN);
         lf = opmode.hardwareMap.dcMotor.get(drive_lfN);
@@ -149,26 +159,51 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         lf.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lb.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        debug("Done.");
+
         /** LIFT */
+        debug("Setting up lift...");
+
         lift = new Lift(opmode.hardwareMap.dcMotor.get(liftN));
 
+        debug("Done.");
+
         /** GRABBER */
+        debug("Setting up grabber...");
+
         bl = new ToggleServo(opmode.hardwareMap.servo.get(grabber_blN), blo, blc);
         br = new ToggleServo(opmode.hardwareMap.servo.get(grabber_brN), bro, brc);
         tl = new ToggleServo(opmode.hardwareMap.servo.get(grabber_tlN), tlo, tlc);
         tr = new ToggleServo(opmode.hardwareMap.servo.get(grabber_trN), tro, trc);
         rot = new Rotater(opmode.hardwareMap.dcMotor.get(grabber_rotN), lift);
 
+        debug("Done.");
+
         /** RELIC ARM */
+        debug("Setting up relic arm...");
+
         initRelicArm();
 
+        debug("Done.");
+
         /** JEWEL ARM */
+        debug("Setting up jewel arm...");
+
         jewelArm = opmode.hardwareMap.servo.get(jewelN);
 
+        debug("Done.");
+
         /** AUTONOMOUS */
+        debug("Setting up gyro...");
+
         gyro = opmode.hardwareMap.gyroSensor.get(gyroN);
+
+        debug("Done.");
+
         if (auto) {
             /** VISUALS */
+            debug("Setting up visuals...");
+
             visuals = new VisualsHandler(opmode, false);
             VisualsHandler.phoneLightOn();
 
@@ -183,14 +218,24 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
                 public void onClick(View v) { doneAligning = true; visuals.getPreview().setOnClickListener(null); }
             });
 
+            debug("Done.");
+
             /** SENSORS */
+
+            debug("Setting up color sensor...");
+
             jewelSensor = (ModernRoboticsI2cColorSensor)opmode.hardwareMap.colorSensor.get(colorN);
             jewelSensor.resetDeviceConfigurationForOpMode();
             csLightOn();
 
+            debug("Done.");
+
+            debug("Setting up ultrasonic sensor...");
+
             ultra = (HiTechnicNxtUltrasonicSensor) opmode.hardwareMap.ultrasonicSensor.get(ultrasonicSensorN);
             ultra.resetDeviceConfigurationForOpMode();
 
+            debug("Done.");
         } else csLightOff();
     }
 
@@ -377,9 +422,10 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
     /** RELIC ARM */
 //    grab: ng 150, g 80
 //    up: d 70, u 215
-//    out: continuous
+//    out: tetrix motor
+//    in: tetrix motor
             // This is super lazy programming. Sorry...
-    private ContinuousServo out;
+    private DcMotor out, in;
     private ToggleServo grab, up;
     private static final double
             grab_no_grab = .588,
@@ -530,7 +576,6 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         doJewels(opmode);
 
         if (opmode.opModeIsActive() && !alliancePosition.justDoJewel() && !allianceColor.parkAuto()) {
-
             debug("NOT JUST DO JEWELS AND NOT PARK!");
 
             telewithup("Status", "Driving off balancing plate...");
@@ -543,43 +588,28 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
 
             driveToCryptobox(opmode);
 
-//            telewithup("Status", "Driving to key column...");
-//            debug("Driving to key column...");
-//
-//            driveToColumn(opmode);
+            telewithup("Status", "Driving to column...");
+            debug("Driving to column...");
+            driveToColumn(opmode);
 
-//            time.reset();
-//            VisualsHandler.phoneLightOn();
-//            List<Point> divs;
-//            Log.d(VisualsHandler.TAG, "---- BEGIN TEST ----");
-//            while (opmode.opModeIsActive()) {
-//                if (((int)(time.seconds()%3) == 0)) {
-//                    divs = visuals.previewCryptobox(allianceColor);
-//                    if (!opmode.opModeIsActive()) break;
-//                    for (Point com : divs) Log.d(VisualsHandler.TAG, "COM: " + com.x + ", " + com.y);
-//                }
-//                tele("Status", "Done.");
-//                lastKnownPos.position.teleout(opmode, "Pos");
-//                lastKnownPos.rotation.teleout(opmode, "Rot");
-//                tele("Θ", specialTheta());
-//                telewithup("Column", keyColumn());
-//            }
-//            closeVisuals();
-//            return;
+            telewithup("Status", "Placing glyph...");
+            debug("Placing glyph...");
+            placeGlyph(opmode);
         }
 
         if (opmode.opModeIsActive() && !alliancePosition.justDoJewel() && allianceColor.parkAuto()) {
             debug("PARK ONLY AUTONOMOUS!");
+
             VisualsHandler.phoneLightOff();
             doPark(opmode);
         }
 
         VisualsHandler.phoneLightOff();
 
-        debug("Done with autonomous. Time was " + localTime.seconds() + " seconds.");
-
         lift.groundground();
         lift.waitForEncoders(opmode);
+
+        debug("Done with autonomous. Time was " + localTime.seconds() + " seconds.");
 
         while (opmode.opModeIsActive()) {
             tele("Status", "Done.");
@@ -596,53 +626,84 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
     private void doJewels (LinearOpMode opmode) {
         if (!opmode.opModeIsActive()) return;
         boolean turnCCW;
+
         debug("-- BEGIN DOING JEWELS --");
+
         ElapsedTime localTime = new ElapsedTime();
 
         JewelConfig pre = visuals.jewelConfig;
         debug("Jewel config from initialization: " + pre.toString());
 
         telewithup("Status", "Closing/lowering everything...");
+        debug("Setting everything up...");
+
         raiseArm();
         br.close();
         bl.close();
         tr.close();
         tl.close();
+        lift.setPosition(flip_position);
+
+        debug("Checking jewels with camera...");
+        time.reset();
 
         visuals.checkJewelsWithCamera();
         JewelConfig post = visuals.jewelConfig;
+
+        debug("Done checking. Time was " + time.seconds() + " seconds.");
         debug("Jewel config after initialization: " + post.toString());
+        debug("Lowering arm...");
 
         lowerArm();
+
+        debug("Calibrating gyro...");
 
         calibrateGyro();
 
         telewithup("Status", "Reading color sensor...");
+        debug("Reading color sensor...");
+
         Color jewelC = Color.readCS(jewelSensor);
+
         debug("Jewel color of sensor: " + jewelC.toString());
 
         if (jewelC == Color.ERROR) {
             telewithup("Status", "Couldn't read it with color sensor...");
+            warn("Couldn't read jewels with color sensor.");
             if (post == JewelConfig.ERROR) {
                 telewithup("Status", "Couldn't read it actively with camera...");
+                warn("Couldn't get jewel color while running...");
                 if (pre == JewelConfig.ERROR) {
                     telewithup("Status", "Couldn't read it...");
+                    error("Couldn't get jewel color at all.");
                     raiseArm();
+                    debug("Done doing jewels. Time is " + localTime.seconds() + " seconds.");
                     return;
                 } else turnCCW = allianceColor.turnCCWforJewels(pre);
             } else turnCCW = allianceColor.turnCCWforJewels(post);
         } else turnCCW = allianceColor.turnCCWforJewels(jewelC);
 
-        if (!opmode.opModeIsActive()) return;
+        debug("Waiting for lift...");
+
+        lift.waitForEncoders(opmode);
+
         if (turnCCW) {
             telewithup("Status", "Turning left...");
-            turnCentrallyPastAngle(opmode, ccwJewelAngle, .5f);
+            debug("Knocking off left jewel...");
+
+            turnCentrallyPastAngle(opmode, ccwJewelAngle, .3f);
         } else {
             telewithup("Status", "Turning right...");
-            turnCentrallyPastAngle(opmode, cwJewelAngle, .5f);
+            debug("Knocking off right jewel...");
+
+            turnCentrallyPastAngle(opmode, cwJewelAngle, .3f);
         }
+
         telewithup("Status", "Raising arm...");
+        debug("Raising arm...");
+
         raiseArm();
+
         telewithup("Status", "Completed doing jewel.");
         debug("Done doing jewels. Time is " + localTime.seconds() + " seconds.");
     }
@@ -652,24 +713,22 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
 
         debug("-- DRIVING OFF BALANCING STONE --");
 
-        opmode.hardwareMap.deviceInterfaceModule.get("dim").deregisterForPortReadyCallback(5);
         ElapsedTime localTime = new ElapsedTime();
 
-        lift.setPosition(flip_position);
+        debug("Fixing rotation...");
 
         turnCentrallyToAngle(opmode, (int)lastKnownPos.rotation.z, .2f, .15f);
 
-        lift.waitForEncoders(opmode);
-
         if (alliancePosition == Position.CORNER) {
+            debug("Strafing 27 inches...");
 
             strafeDistanceAbsDrift(opmode, 27, allianceColor == Color.RED);
 
-            int start = specialTheta();
+            if (allianceColor == Color.BLUE) {
+                debug("Straightening up to drive 8 inches...");
 
-            turnCentrallyToAngle(opmode, (int)lastKnownPos.rotation.z, .2f, .15f);
-
-            updatePosition(start);
+                turnCentrallyToAngle(opmode, (int)lastKnownPos.rotation.z, .2f, .15f);
+            }
 //            telewithup("Status", "Driving two and a half feet...");
 //            strafeDistance(opmode, 28, allianceColor != Color.BLUE);
 //
@@ -684,14 +743,16 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
 //            int ang = allianceColor == Color.BLUE ? -90 : 90;
 //            turnCentrallyToAngle(opmode, specialTheta() + ang, .33f, .15f);
         } else {
+            double d = 0;
+            if (allianceColor == Color.BLUE) d = -3;
 
-            strafeDistanceAbsDrift(opmode, 34, allianceColor == Color.RED);
+            debug("Strafing " + (34 + d) + " inches...");
 
-            int start = specialTheta();
+            strafeDistanceAbsDrift(opmode, 34 + d, allianceColor == Color.RED);
+
+            debug("Straightening up...");
 
             turnCentrallyToAngle(opmode, (int)lastKnownPos.rotation.z, .2f, .15f);
-
-            updatePosition(start);
 //            telewithup("Status", "Driving three feet...");
 //            strafeDistance(opmode, 36, allianceColor != Color.BLUE);
 //
@@ -784,19 +845,15 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         if (!opmode.opModeIsActive() || lastKnownPos == null) return;
 
         debug("-- DRIVING TO CRYPTOBOX --");
+
         ElapsedTime localTime = new ElapsedTime();
 
         if (alliancePosition == Position.CORNER) {
+            if (allianceColor == Color.BLUE) { debug("Driving towards cryptobox..."); driveDistance(opmode, 8, .5f); }
 
-            driveDistance(opmode, 8, .5f);
+            debug("Turning away from cryptobox...");
 
-            int start = specialTheta();
-
-            turnCentrallyToAngle(opmode, alliancePosition.getAwayFromCryptoAngle(allianceColor, lastKnownPos.position.z), .2f, .15f);
-
-            updatePosition(start);
-        } else {
-            // TODO: Figure out wtf to do in side positions to take cryptobox picture
+            turnCentrallyToAngle(opmode, alliancePosition.getAwayFromCryptoAngle(allianceColor, lastKnownPos.rotation.z), .4f, .2f);
         }
 
         debug("Done driving to cryptobox. Time is " + localTime.seconds() + " seconds.");
@@ -876,108 +933,74 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         if (!opmode.opModeIsActive()) return;
 
         debug("-- DRIVING TO KEY COLUMN --");
-        debug("Strafing 8 inches towards cryptobox...");
 
         ElapsedTime localTime = new ElapsedTime();
-
-        strafeDistance(opmode, 8, allianceColor == Color.BLUE);
 
         debug("Waiting a second before processing cryptobox...");
 
         wait(opmode, 1);
 
+        double ultra = getUltraInches();
+
+        debug("Saved ultra at " + ultra + "inches.");
         debug("Processing cryptobox...");
 
         time.reset();
-        List<Point> divs = visuals.previewCryptobox(allianceColor);
+        double[] coordinates = processDividerCoordinates(visuals.previewCryptobox(allianceColor));
 
         debug("Time to process cryptobox is " + time.seconds());
-        for (Point div : divs) debug("Got divider: " + div.x + ", " + div.y);
-        debug("Based on cryptobox info, I should...");
+        for (double x : coordinates) debug("Got divider: " + x);
 
-        switch (divs.size()) {
-            case 0: debug("...strafe eight inches towards the box."); break;
-            case 1:
-                double x = divs.get(0).x, fix = 3;
-                if (allianceColor == Color.BLUE) { if (x > 630) fix = 8; else if (x > 480) fix = 6; }
-                else if (x < 90) fix = 8; else if (x < 240) fix = 6;
-                debug("...strafe " + (int)fix + " inches towards the box."); break;
-            case 2:
-                double[] xs = sortDividerCoordinates(divs);
-                double ppi = Math.abs(xs[1] - xs[0]) / 7.65;
-                debug("...do some special stuff. Pixels per inch is " + ppi); break;
-            case 3:
-                xs = sortDividerCoordinates(divs);
-                ppi = Math.abs(xs[2] - xs[0]) / 15.3;
-                debug("...do some special stuff. Pixels per inch is " + ppi); break;
-            default: debug("...reprocess the box."); break;
-        }
+        double d = keyColumn.doCryptoboxLogic(allianceColor, alliancePosition, coordinates);
+
+        debug("Distance to drive is " + d + " inches.");
+
+        strafeDistance(opmode, d, allianceColor == Color.BLUE && alliancePosition == Position.CORNER);
+
+        if (getUltraInches() < ultra) ultra = getUltraInches();
+        if (ultra < 12.5) { debug("Driving away from cryptobox..."); driveDistance(opmode, 12.5 - ultra, .3f); }
+
+        debug("Turning back around...");
+
+        turnCentrallyToAngle(opmode, alliancePosition.getFacingCryptoAngle(allianceColor, lastKnownPos.rotation.z), .5f, .2f);
 
         debug("Done driving to key column. Time is " + localTime.seconds() + " seconds.");
 
     }
 
-    private void alignToCryptobox (LinearOpMode opmode) {
-        if (!opmode.opModeIsActive()) return;
-
-//        // Calculate and drive distance to drive to line phone up with cryptobox
-//        double d = alliancePosition.distanceToAlignCryptobox(allianceColor, lastKnownPos.position);
-//        strafeDistance(opmode, Math.abs(d), d < 0);
-//
-//        // Calculate position based on cryptobox data
-//        Mat img = visuals.takeMatPicture();
-//        List<Point> cryptobox = VisualsHandler.processCryptobox(img, allianceColor);
-//        boolean aligning = true;
-//        d = 0;
-//        time.reset();
-//        do {
-//            switch (cryptobox.size()) {
-//                case 0:
-//                    strafeDistance(opmode, 8, (allianceColor == Color.BLUE) == (alliancePosition == Position.CORNER));
-//                    break;
-//                case 1:
-//                    double x = cryptobox.get(0).x;
-//                    double fix = 3;
-//                    if (x < img.width() / 8) fix = 8; else if (x < img.width() / 3) fix = 6;
-//                    strafeDistance(opmode, fix, (allianceColor == Color.BLUE) == (alliancePosition == Position.CORNER));
-//                    break;
-//                case 2:
-//                    double inchesPerPixel = 7.65 / Math.abs(cryptobox.get(1).x - cryptobox.get(0).x);
-//                    d = (allianceColor == Color.BLUE)^(cryptobox.get(0).x<cryptobox.get(1).x) ?
-//                            cryptobox.get(1).x :
-//                            cryptobox.get(0).x;
-//                    aligning = false;
-//                    break;
-//                case 3:
-//
-//                    aligning = false;
-//                    break;
-//                default:
-//                    cryptobox = VisualsHandler.processCryptobox(img, allianceColor);
-//                    break;
-//            }
-//        } while (time.seconds() < 5 && aligning && opmode.opModeIsActive());
-//
-//        // Calculate and drive distance to key column
-    }
-
     private void placeGlyph (LinearOpMode opmode) {
         if (!opmode.opModeIsActive()) return;
+
+        debug("-- BEGIN PLACING GLYPH --");
+
+        ElapsedTime localTime = new ElapsedTime();
+
+        debug("Grounding lift...");
 
         lift.ground();
         lift.waitForEncoders(opmode);
 
+        debug("Driving a foot...");
+
         driveDistance(opmode, 12, .3f);
+
+        debug("Opening everything...");
 
         bl.open();
         br.open();
         tl.open();
         tr.open();
 
+        debug("Backing up...");
+
         driveDistance(opmode, -4, .3f);
+
+        debug("Actually grounding lift...");
 
         lift.groundground();
         lift.waitForEncoders(opmode);
+
+        debug("Done. Time was " + localTime.seconds() + " seconds.");
     }
 
     private void doPark (LinearOpMode opmode) {
@@ -990,6 +1013,8 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         lift.waitForEncoders(opmode);
     }
 
+    /** AUTONOMOUS HELPERS */
+    /** DRIVE DISTANCE */
     private void driveDistance (LinearOpMode opmode, double inches, float power) {
         if (!opmode.opModeIsActive()) return;
         int encoder = (int)(1120 * (inches/(Math.PI * 4.0)));
@@ -1057,6 +1082,7 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         return drift;
     }
 
+    /** STRAFE DISTANCE */
     private void strafeDistance (LinearOpMode opmode, double inches, boolean right) {
         if (!opmode.opModeIsActive()) return;
 
@@ -1223,6 +1249,7 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         lb.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
+    /** TURNING */
     private void turnCentrallyToAngle (LinearOpMode opmode, int ang, float power1, float power2) {
         if (!opmode.opModeIsActive()) return;
         if (ang > 180) ang -= 360;
@@ -1398,6 +1425,7 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         setDrivePower(0);
     }
 
+    /** POSITION CALCULATION */
     private void updatePosition (int start /* theta 1 */) {
         double theta0 = lastKnownPos.rotation.z; int theta2 = specialTheta();
         Vector3 a = f(theta0 + start), b = f(theta0 + theta2);
@@ -1414,6 +1442,7 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         );
     }
 
+    /** DRIVE POWER AND ENCODERS */
     private void setDrivePower (double power) {
         rf.setPower(power); rb.setPower(power); lf.setPower(power); lb.setPower(power);
     }
@@ -1445,6 +1474,7 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         return ((r_rf+r_rb+r_lf+r_lb)/4) < Lift.thres;
     }
 
+    /** CRYPTOBOX PROCESSING */
     private static double[] sortDividerCoordinates(List<Point> divs) {
         double[] ret = new double[divs.size()];
         for (int i = 0; i < divs.size(); i++) ret[i] = divs.get(i).x;
@@ -1472,8 +1502,8 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
         for (int i = 0; i < arr.length; i++) arr[i] = ret.get(i);
         return arr;
     }
-    // TODO: Box coordinates pre-processing
 
+    /** WAIT */
     private static void wait(LinearOpMode opmode, double seconds) {
         ElapsedTime time = new ElapsedTime();
         while (time.seconds() < seconds) if (!opmode.opModeIsActive()) return;
@@ -1484,11 +1514,11 @@ public class Mecanlift { // ultrasonic sensor is "ultra"
     private void teleup () { opmode.telemetry.update(); }
     private void telewithup (String caption, Object data) {opmode.telemetry.addData(caption, data); opmode.telemetry.update(); }
 
-    private static String verbolastMessage = "", debugLastMessage = "", warnLastMessage = "", errorLastMessage = "";
+    private static String verbolastMessage = "";
     private static void verbo (String message) { if (message.equals(verbolastMessage)) return; Log.v(TAG, message); verbolastMessage = message; }
-    private static void debug (String message) { if (message.equals(debugLastMessage)) return; Log.d(TAG, message); debugLastMessage = message; }
-    private static void warn  (String message) { if (message.equals(warnLastMessage )) return; Log.w(TAG, message); warnLastMessage  = message; }
-    private static void error (String message) { if (message.equals(errorLastMessage)) return; Log.e(TAG, message); errorLastMessage = message; }
+    private static void debug (String message) { Log.d(TAG, message); }
+    private static void warn  (String message) { Log.w(TAG, message); }
+    private static void error (String message) { Log.e(TAG, message); }
 
     /** DEPRECATED */
     @Deprecated private static final int
