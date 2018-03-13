@@ -11,7 +11,7 @@ public class Lift {
     public static final int
             thres = 10;     // Threshold for encoders
     private static final int
-            lift0 = 125,     // Ground level
+            lift0 = 200,     // Ground level
             lift1 = 3000,   // 1 glyph (6in) high
             lift2 = 5330;   // 2 glyphs (1ft) high
     private static final double
@@ -156,7 +156,7 @@ public class Lift {
     void ground () { l.setTargetPosition(lift0); l.setPower(liftS); eGood = false; }
     void groundground () { l.setTargetPosition(0); l.setPower(.5); eGood = false; }
     void lift () { l.setTargetPosition(lift1); l.setPower(liftS); eGood = false; }
-    boolean grounded () { return l.getTargetPosition() == lift0; }
+    boolean grounded () { return l.getCurrentPosition() < Rotater.flip_position; }
     @Deprecated public void waitForEncoders () { while (!update_encoders(l)); }
     void waitForEncoders (LinearOpMode opmode) { while (!update_encoders(l) && opmode.opModeIsActive()); }
 

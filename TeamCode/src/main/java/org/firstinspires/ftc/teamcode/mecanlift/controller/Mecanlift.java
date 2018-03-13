@@ -955,7 +955,7 @@ public class Mecanlift {
 
         debug("Distance to drive is " + d + " inches.");
 
-        strafeDistance(opmode, d, allianceColor == Color.BLUE && alliancePosition == Position.CORNER);
+        strafeDistance(opmode, d, allianceColor == Color.RED && alliancePosition == Position.CORNER);
 
         if (getUltraInches() < ultra) ultra = getUltraInches();
         if (ultra < 12.5) { debug("Driving away from cryptobox..."); driveDistance(opmode, 12.5 - ultra, .3f); }

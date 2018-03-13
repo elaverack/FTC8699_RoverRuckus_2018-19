@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode.mecanlift.controller;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class Rotater {
 
@@ -11,7 +12,8 @@ public class Rotater {
             not_flipped_pre = 80,
             not_flipped_pos = 30,
             flipped_pre = 1580,
-            flipped_pos = 1640,
+            flipped_pos = 1640;
+    public static final int
             flip_position = 1000;   // Position of lift when flipping from ground position
     private static final double
             pre_power = 1,
@@ -29,16 +31,20 @@ public class Rotater {
             lifted = false,     // Boolean to determine whether or not the lift has gone up a little bit for rotating
             pre = true;
 
+    private ElapsedTime time;
+
     public Rotater (DcMotor rotater, Lift lift) {
         this.lift = lift;
         r = rotater;
         r.setDirection(DcMotorSimple.Direction.REVERSE);
         r.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         r.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        time = new ElapsedTime();
     }
 
     public void doRotation (boolean b) {
         if (rotating) {
+            if (lifted && pre && time.seconds() >= .25) r.setPower(pre_power);
             if (Lift.update_encoders(r)) { // Done rotating
                 if (pre) {
                     if (flipped) {
@@ -65,8 +71,9 @@ public class Rotater {
             if (flipped) {
                 r.setTargetPosition(not_flipped_pre);
             } else r.setTargetPosition(flipped_pre);
-            r.setPower(pre_power);
+            if (!lifted) r.setPower(pre_power);
             rotating = true;
+            time.reset();
         }
     }
 
