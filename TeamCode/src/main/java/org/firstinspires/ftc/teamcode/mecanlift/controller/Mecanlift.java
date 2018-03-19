@@ -33,13 +33,13 @@ public class Mecanlift {
 
     /** CONSTANTS */
     private static final double                         // Grabber servo positions
-            blo = 0.157,                                // Bottom left open
-            blc = 0.392,                                // Bottom left close
-            bro = 0.863,                                // Bottom right open
-            brc = 0.647,                                // Bottom right close
-            tlo = 0.863,                                // Top left open
+            blo = 0.275,//157,                                // Bottom left open
+            blc = 0.421,                                // Bottom left close
+            bro = 0.588,                                // Bottom right open
+            brc = 0.4406,                                // Bottom right close
+            tlo = 0.745,                                // Top left open
             tlc = 0.627,                                // Top left close
-            tro = 0.196,                                // Top right open
+            tro = 0.275,                                // Top right open
             trc = 0.412,                                // Top right close
 
             jewelArm_down = 0,                          // The jewel servo position for lowering the arm
@@ -66,6 +66,24 @@ public class Mecanlift {
         @Override
         public void portIsReady(int port) { debug("I'm amazing..."); }
     };
+
+    private final Runnable bottomROC = new Runnable() {
+        @Override
+        public void run() {
+            if (!rot.flipped) lift.grabbedBlock();
+        }
+    }, topROC = new Runnable() {
+        @Override
+        public void run() {
+            if (rot.flipped) lift.grabbedBlock();
+        }
+    }, runOnOpen = new Runnable() {
+        @Override
+        public void run() {
+            lift.releasedBlocks();
+        }
+    };
+
 
     private static final String
             TAG = "Mecanlift",
@@ -171,10 +189,10 @@ public class Mecanlift {
         /** GRABBER */
         debug("Setting up grabber...");
 
-        bl = new ToggleServo(opmode.hardwareMap.servo.get(grabber_blN), blo, blc);
-        br = new ToggleServo(opmode.hardwareMap.servo.get(grabber_brN), bro, brc);
-        tl = new ToggleServo(opmode.hardwareMap.servo.get(grabber_tlN), tlo, tlc);
-        tr = new ToggleServo(opmode.hardwareMap.servo.get(grabber_trN), tro, trc);
+        bl = new ToggleServo(opmode.hardwareMap.servo.get(grabber_blN), blo, blc, bottomROC, runOnOpen);
+        br = new ToggleServo(opmode.hardwareMap.servo.get(grabber_brN), bro, brc, bottomROC, runOnOpen);
+        tl = new ToggleServo(opmode.hardwareMap.servo.get(grabber_tlN), tlo, tlc, topROC, runOnOpen);
+        tr = new ToggleServo(opmode.hardwareMap.servo.get(grabber_trN), tro, trc, topROC, runOnOpen);
         rot = new Rotater(opmode.hardwareMap.dcMotor.get(grabber_rotN), lift);
 
         debug("Done.");
@@ -361,9 +379,15 @@ public class Mecanlift {
             tr.tob(a);
         }
         rot.doRotation(flip_grabber());
+        rot.doStraighten(rot_straighten());
         rot.doRotFix(fix_rotate());
 
-        doRelicArm(-opmode.gamepad2.right_stick_y, opmode.gamepad2.y, opmode.gamepad2.x);
+        doRelicArm(
+                opmode.gamepad2.right_stick_y*opmode.gamepad2.right_trigger,
+                -opmode.gamepad2.left_stick_y*opmode.gamepad2.right_trigger,
+                opmode.gamepad2.y,
+                opmode.gamepad2.x
+        );
     }
 
     /** STOP METHODS */
@@ -410,7 +434,7 @@ public class Mecanlift {
         if (!b) return;
         if (!turned) {
             turning = true;
-            qt_angle = gyro.getHeading() + 180;
+            qt_angle = gyro.getHeading() + 165;
             if (qt_angle > 359) qt_angle -= 360;
             powerRF += 1f;
             powerRB += 1f;
@@ -421,7 +445,7 @@ public class Mecanlift {
 
     /** RELIC ARM */
 //    grab: ng 150, g 80
-//    up: d 70, u 215
+//    up: d 70, u 220
 //    out: tetrix motor
 //    in: tetrix motor
             // This is super lazy programming. Sorry...
@@ -430,25 +454,36 @@ public class Mecanlift {
     private static final double
             grab_no_grab = .588,
             grab_grab = .314,
-            up_up = .843,
+            up_up = .863,
             up_down = .2745;
     private void initRelicArm() {
 //        out = new ContinuousServo(opmode.hardwareMap.servo.get("out"));
-//        grab = new ToggleServo(opmode.hardwareMap.servo.get("grab"), grab_no_grab, grab_grab);
-//        up = new ToggleServo(opmode.hardwareMap.servo.get("up"), up_down, up_up);
+        out = opmode.hardwareMap.dcMotor.get(pullArmOutMotorN);
+        in = opmode.hardwareMap.dcMotor.get(pullArmInMotorN);
+        out.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        in.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        out.setDirection(DcMotorSimple.Direction.FORWARD);
+        in.setDirection(DcMotorSimple.Direction.FORWARD);
+        out.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        in.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        grab = new ToggleServo(opmode.hardwareMap.servo.get(grabRelicServoN), grab_no_grab, grab_grab);
+        up = new ToggleServo(opmode.hardwareMap.servo.get(liftRelicServoN), up_down, up_up);
         //out.stop();
     }
     private void startRelicArm() {
+        out.setPower(0);
+        in.setPower(0);
 //        out.stop();
-//        up.open();
-//        grab.open();
+        up.open();
+        grab.open();
     }
-    private void doRelicArm (float outPower, boolean togGrab, boolean togUp) {
-//        out.setPower(outPower);
-//        grab.tob(togGrab);
-//        up.tob(togUp);
+    private void doRelicArm (float outPower, float inPower, boolean togGrab, boolean togUp) {
+        out.setPower(outPower);
+        in.setPower(inPower);
+        grab.tob(togGrab);
+        up.tob(togUp);
     }
-    private void stopRelicArm () { /*out.stop();*/ }
+    private void stopRelicArm () { out.setPower(0); in.setPower(0); }
 
     /** GAMEPADS */
 //    gamepad 1:
@@ -483,6 +518,7 @@ public class Mecanlift {
             lpt     = new boolean[]{false, false}, // lift pos tog
             lg      = new boolean[]{false, false}, // lift ground
             fr      = new boolean[]{false, false}, // fix rotate
+            rs      = new boolean[]{false, false},
             tb      = new boolean[]{false, false}, // toggle bottom
             tt      = new boolean[]{false, false}, // toggle top
             fg      = new boolean[]{false, false}; // flip grabber
@@ -517,6 +553,17 @@ public class Mecanlift {
             fr[1] = true;
             return true;
         } else if (!(opmode.gamepad2.dpad_right && opmode.gamepad2.right_trigger > .5) && fr[1]) fr[1] = false;
+        return false;
+    }
+    private boolean rot_straighten () {
+        if (opmode.gamepad1.dpad_left && !rs[0]) {
+            rs[0] = true;
+            return true;
+        } else if (!opmode.gamepad1.dpad_left && rs[0]) rs[0] = false;
+        if (opmode.gamepad2.dpad_left && !rs[1]) {
+            rs[1] = true;
+            return true;
+        } else if (!opmode.gamepad2.dpad_left && rs[1]) rs[1] = false;
         return false;
     }
     private boolean toggle_bottom () {
@@ -642,7 +689,7 @@ public class Mecanlift {
         bl.close();
         tr.close();
         tl.close();
-        lift.setPosition(flip_position);
+        lift.setPosition(flip_position+250);
 
         debug("Checking jewels with camera...");
         time.reset();
@@ -849,7 +896,7 @@ public class Mecanlift {
         ElapsedTime localTime = new ElapsedTime();
 
         if (alliancePosition == Position.CORNER) {
-            if (allianceColor == Color.BLUE) { debug("Driving towards cryptobox..."); driveDistance(opmode, 8, .5f); }
+            if (allianceColor == Color.BLUE) { debug("Driving towards cryptobox..."); driveDistance(opmode, 10, .5f); }
 
             debug("Turning away from cryptobox...");
 
@@ -947,6 +994,7 @@ public class Mecanlift {
 
         time.reset();
         double[] coordinates = processDividerCoordinates(visuals.previewCryptobox(allianceColor));
+        telewithup("NO divs", coordinates.length);
 
         debug("Time to process cryptobox is " + time.seconds());
         for (double x : coordinates) debug("Got divider: " + x);

@@ -12,12 +12,21 @@ public class ToggleServo {
             buttoned = false,
             opened = false,
             closed = false;
+    private Runnable runOnClose = new Runnable() {
+        @Override
+        public void run() {}
+    }, runOnOpen = new Runnable() {
+        @Override
+        public void run() {}
+    };
 
     public ToggleServo (Servo servo, double open_pos, double close_pos)
         { s = servo; o = open_pos; c = close_pos; }
+    ToggleServo (Servo servo, double open_pos, double close_pos, Runnable runOnClose, Runnable runOnOpen)
+        { s = servo; o = open_pos; c = close_pos; this.runOnClose = runOnClose; this.runOnOpen = runOnOpen; }
 
-    public void close () { s.setPosition(c); }
-    public void open () { s.setPosition(o); }
+    public void close () { s.setPosition(c); runOnClose.run(); }
+    public void open () { s.setPosition(o); runOnOpen.run(); }
     public void toggle () { if (isOpened()) { close(); } else open(); }
 
     public boolean isOpened () { return s.getPosition() == o; }

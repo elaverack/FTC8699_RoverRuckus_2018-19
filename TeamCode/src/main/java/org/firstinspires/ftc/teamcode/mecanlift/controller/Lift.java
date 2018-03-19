@@ -10,10 +10,11 @@ public class Lift {
 
     public static final int
             thres = 10;     // Threshold for encoders
+    private static int
+            lift0 = 0;     // Ground level
     private static final int
-            lift0 = 200,     // Ground level
-            lift1 = 3000,   // 1 glyph (6in) high
-            lift2 = 5330;   // 2 glyphs (1ft) high
+            lift1 = 1750,   // 1 glyph (6in) high
+            lift2 = 3520;   // 2 glyphs (1ft) high
     private static final double
             liftS   = 1,    // Speed lift moves at when going to positions
             liftDS  = .25;  // Speed lift moves at when directly controlled
@@ -91,17 +92,8 @@ public class Lift {
         if (upd && !b) { upd = false; return; }
         if (!b) return;
         if (!upd) {
-            switch (l.getTargetPosition()) {
-                case lift0:
-                    l.setTargetPosition(lift1); l.setPower(liftS); eGood = false;
-                    break;
-                case lift1:
-                    l.setTargetPosition(lift2); l.setPower(liftS); eGood = false;
-                    break;
-                case lift2:
-                    l.setTargetPosition(lift1); l.setPower(liftS); eGood = false;
-                    break;
-            }
+            if ((l.getCurrentPosition() >= lift1 - thres && l.getCurrentPosition() < lift2 - thres) || l.getTargetPosition() == lift1) lift2();
+            else lift();
             upd = true;
         }
     }
@@ -151,12 +143,22 @@ public class Lift {
         }
     }
 
+    void grabbedBlock () {
+        lift0 += 100; if (grounded()) ground();
+    }
+    void releasedBlocks () {
+        lift0 = 0; if (grounded()) ground();
+    }
+
     /** FOR AUTONOMOUS USE */
     public void setPosition (int pos) { l.setTargetPosition(pos); l.setPower(liftS); eGood = false; }
+    public void addToPosition (int add) { setPosition(l.getCurrentPosition() + add); }
     void ground () { l.setTargetPosition(lift0); l.setPower(liftS); eGood = false; }
     void groundground () { l.setTargetPosition(0); l.setPower(.5); eGood = false; }
     void lift () { l.setTargetPosition(lift1); l.setPower(liftS); eGood = false; }
+    void lift2 () { l.setTargetPosition(lift2); l.setPower(liftS); eGood = false; }
     boolean grounded () { return l.getCurrentPosition() < Rotater.flip_position; }
+    boolean goingUp () { return l.getTargetPosition() == lift1; }
     @Deprecated public void waitForEncoders () { while (!update_encoders(l)); }
     void waitForEncoders (LinearOpMode opmode) { while (!update_encoders(l) && opmode.opModeIsActive()); }
 

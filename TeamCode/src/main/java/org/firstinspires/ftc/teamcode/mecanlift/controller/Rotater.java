@@ -14,7 +14,7 @@ public class Rotater {
             flipped_pre = 1580,
             flipped_pos = 1640;
     public static final int
-            flip_position = 1000;   // Position of lift when flipping from ground position
+            flip_position = 520;   // Position of lift when flipping from ground position
     private static final double
             pre_power = 1,
             pos_power = .3;
@@ -29,6 +29,7 @@ public class Rotater {
             fixing = false,     // Boolean to determine whether or not we are currently fixing the grabber
             fixed = false,      // Boolean for fixing button logic
             lifted = false,     // Boolean to determine whether or not the lift has gone up a little bit for rotating
+            straightened = false,
             pre = true;
 
     private ElapsedTime time;
@@ -77,6 +78,21 @@ public class Rotater {
         }
     }
 
+    public void doStraighten (boolean b) {
+        if (straightened && !b) straightened = false;
+        if (!b) return;
+        if (!straightened) {
+            if (lift.grounded() && !lift.goingUp()) { lifted = true; lift.setPosition(flip_position); }
+            if (flipped) {
+                r.setTargetPosition(flipped_pre);
+            } else r.setTargetPosition(not_flipped_pre);
+            if (!lifted) r.setPower(pre_power);
+            rotating = true;
+            flipped = !flipped;
+            time.reset();
+        }
+    }
+
     public void doRotFix (boolean b) {
         if (fixing && Lift.update_encoders(r)) {
             if (pre) {
@@ -90,6 +106,7 @@ public class Rotater {
             if (lifted) { lift.ground(); lifted = false; }
             fixing = false;
             pre = true;
+            flipped = false;
             return;
         }
         if (fixed && !b) { fixed = false; return; }
