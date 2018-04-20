@@ -5,12 +5,13 @@ package org.firstinspires.ftc.teamcode.visuals;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
-import android.hardware.Camera;
 import android.os.Environment;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.vuforia.CameraDevice;
 
 import org.firstinspires.ftc.teamcode.R;
@@ -138,6 +139,9 @@ public class VisualsHandler {
 
     }
     public List<Point> previewCryptobox (Color allianceColor) {
+        Log.d(TAG, "- BEGIN PREVIEW CRYPTOBOX -");
+        ElapsedTime localTime = new ElapsedTime();
+
         Mat
                 start = takeMatPicture(),               // Starting image
                 hsv = new Mat(),                        // Image in HSV
@@ -155,11 +159,12 @@ public class VisualsHandler {
         } else Core.inRange(hsv, blue_hsv_low, blue_hsv_high, end);
 
         // Close the holes in the mask
-        Imgproc.morphologyEx(end, end, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(6, 6)));
+        Imgproc.morphologyEx(end, end, Imgproc.MORPH_CLOSE,
+                Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(6, 6)));
 
         // Look for the big vertical separators of the cryptobox in the mask
         Imgproc.HoughLinesP(end, lines, 50, Math.PI, 100, end.rows() * 2 / 3, 75);
-        end.setTo(new Scalar(0));
+        end.setTo(new Scalar(0)); // Empty end to prepare for line drawing
         Mat tempPreview = new Mat(start.rows(), start.cols(), start.type());
 
         // Draw them into one image
@@ -196,6 +201,8 @@ public class VisualsHandler {
 
         // Lastly, set the preview window to the result
         setPreview(preview);
+
+        Log.d(TAG, "Done previewing cryptobox. Time was " + localTime.seconds() + " seconds");
 
         return coms;
 
@@ -259,6 +266,10 @@ public class VisualsHandler {
     }
 
     public static List<Point> processCryptobox (Mat start, Color allianceColor) {
+        Log.d(TAG, "- BEGIN PROCESS CRYPTOBOX -");
+
+        ElapsedTime localTime = new ElapsedTime();
+
         Mat // Assuming start is RGB
                 hsv = new Mat(),                                                // Image in HSV
                 mask = new Mat(),                                               // HSV mask
@@ -275,16 +286,19 @@ public class VisualsHandler {
         } else Core.inRange(hsv, blue_hsv_low, blue_hsv_high, mask);
 
         // Close the holes in the mask
-        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(6,6)));
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE,
+                Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(6,6)));
 
         // Look for the big vertical separators of the cryptobox in the mask
-        Imgproc.HoughLinesP(mask, lines, 50, Math.PI, 100, mask.rows() * 2 / 3, 75);
+        Imgproc.HoughLinesP(mask, lines, 50, Math.PI,
+                100, mask.rows() * 2 / 3, 75);
 
         // Draw them into one image
         for(int i = 0; i < lines.rows(); i++) {
             double[] val = lines.get(i, 0);
             if (val == null) continue;
-            Imgproc.line(linesR, new Point(val[0], val[1]), new Point(val[2], val[3]), new Scalar(255), 10);
+            Imgproc.line(linesR, new Point(val[0], val[1]),
+                    new Point(val[2], val[3]), new Scalar(255), 10);
         }
 
         // Close holes caused by line drawing
@@ -293,11 +307,13 @@ public class VisualsHandler {
         // Find each individual divider and store its center of mass
         Imgproc.findContours(linesR, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        for (int i = 0; i < contours.size(); i++) {
-            Mat divider = new Mat(linesR.rows(), linesR.cols(), linesR.type());
-            Imgproc.drawContours(divider, contours, i, new Scalar(255), -1);
-            ret.add(getCOM(divider));
+        for (int i = 0; i < contours.size(); i++) { // For each divider...
+            Mat divider = new Mat(linesR.rows(), linesR.cols(), linesR.type()); // Create an empty mat
+            Imgproc.drawContours(divider, contours, i, new Scalar(255), -1); // Draw the divider
+            ret.add(getCOM(divider)); // Save its center of mass
         }
+
+        Log.d(TAG, "Done processing cryptobox. Time was " + localTime.seconds() + " seconds.");
 
         return ret;
     }
@@ -506,154 +522,6 @@ public class VisualsHandler {
 
         }
         
-    }
-
-    /** DEPRECATED */
-    @Deprecated public void previewMask(Mat image, Scalar colorHigh, Scalar colorLow) { Mat mask = mask(image, colorHigh, colorLow); setPreview(mask); }
-    @Deprecated public void previewCOM(Mat image, Scalar colorHigh, Scalar colorLow) {
-        Imgproc.circle(image, getCOM(image, colorHigh, colorLow), 10, new Scalar(0,0,255));
-        setPreview(image);
-    }
-    @Deprecated public void showAlignmentLines () {
-        Mat img = new Mat();
-        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-        drawVert(img, vertx);
-        drawHor(img, hory);
-        setPreview(img);
-    }
-    @Deprecated public void tryAlignmentLines (float vert, float hor) {
-        if (vert == 0 && hor == 0) return;
-        Mat img = new Mat();
-        Imgproc.resize(takeMatPicture(),img,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-        if (vert != 0) {
-            vertx += (int)(vert*lines_delta);
-            if (vertx < 0) vertx = 0;
-            if (vertx > img.width()) vertx = img.width();
-            drawVert(img, vertx);
-            drawHor(img, hory);
-            setPreview(img);
-        }
-        if (hor != 0) {
-            hory += (int)(hor*lines_delta);
-            if (hory < 0) hory = 0;
-            if (hory > img.height()) hory = img.height();
-            drawVert(img, vertx);
-            drawHor(img, hory);
-            setPreview(img);
-        }
-    }
-    @Deprecated private static Mat drawVert(Mat mat, int x) {
-        Imgproc.line(mat, new Point(x,0), new Point(x,mat.height()), new Scalar(255,0,0), 8);
-        return mat;
-    }
-    @Deprecated private static Mat drawHor(Mat mat, int y) {
-        Imgproc.line(mat, new Point(0,y), new Point(mat.width(),y), new Scalar(255,0,0), 8);
-        return mat;
-    }
-    @Deprecated private static Mat mask(Mat image, Scalar colorHigh, Scalar colorLow) {
-        Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2HSV_FULL);
-        Mat mask = new Mat();
-        Core.inRange(image, colorLow, colorHigh, mask);
-        return mask;
-    }
-    @Deprecated private static Point getCOM(Mat image, Scalar colorHigh, Scalar colorLow) {
-        Mat mask = mask(image, colorHigh, colorLow);
-        Moments mmnts = Imgproc.moments(mask,true);
-        return new Point((mmnts.get_m10()/mmnts.get_m00()),(mmnts.get_m01()/mmnts.get_m00()));
-    }
-    @Deprecated public void previewOldJewels() {
-        Mat
-                start = new Mat(),
-                red = new Mat(),
-                blue = new Mat(),
-                jewels;
-        final Point
-                RCOM,
-                BCOM;
-
-        Imgproc.cvtColor(takeMatPicture(), start, Imgproc.COLOR_RGB2HSV_FULL);
-        Imgproc.resize(start,start,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-
-        Imgproc.blur(start, start, JEWELS_BSIZE);
-
-        Core.inRange(start, RED_L, RED_H, red);
-        Core.inRange(start, BLUE_L, BLUE_H, blue);
-
-        RCOM = getCOM(red); BCOM = getCOM(blue);
-        jewelConfig = JewelConfig.intCOMs(RCOM, BCOM);
-
-        // Preview
-        jewels = start; // Note: start is hsv, but we are going to treat jewels as RGB
-        jewels.setTo(new Scalar(0,0,0));
-        Imgproc.cvtColor(red, red, Imgproc.COLOR_GRAY2RGB);
-        Imgproc.cvtColor(blue, blue, Imgproc.COLOR_GRAY2RGB);
-        Core.multiply(red, (new Mat(red.rows(), red.cols(), red.type())).setTo(new Scalar(255,0,0)), red);
-        Core.multiply(blue, (new Mat(blue.rows(), blue.cols(), blue.type())).setTo(new Scalar(0,0,255)), blue);
-        Core.add(red,blue,jewels);
-        Imgproc.circle(jewels, RCOM, 10, new Scalar(255,255,0), -1);
-        Imgproc.circle(jewels, BCOM, 10, new Scalar(0,255,255), -1);
-        setPreview(jewels);
-    }
-    @Deprecated public void togglePhoneLight () {
-        if (!hasLight) return;
-        Camera c = Camera.open();
-        Camera.Parameters p = c.getParameters();
-        if (light) {
-            p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-            c.setParameters(p);
-            light = false; return;
-        }
-        p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-        c.setParameters(p);
-        light = true;
-    }
-    @Deprecated private void turnOffPhoneLight () {
-        if (!hasLight) return;
-        Camera c = Camera.open();
-        Camera.Parameters p = c.getParameters();
-        p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-        c.setParameters(p);
-    }
-    @Deprecated public void checkJewels() {
-        Mat
-                start = new Mat(),
-                red = new Mat(),
-                blue = new Mat();
-
-        Imgproc.cvtColor(takeMatPicture(), start, Imgproc.COLOR_RGB2HSV_FULL);
-        Imgproc.resize(start,start,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-
-        Imgproc.blur(start, start, JEWELS_BSIZE);
-
-        Core.inRange(start, RED_L, RED_H, red);
-        Core.inRange(start, BLUE_L, BLUE_H, blue);
-
-        jewelConfig = JewelConfig.intCOMs(getCOM(red), getCOM(blue));
-    }
-    @Deprecated public void checkJewels(Mat start) {
-        Mat
-                red = new Mat(),
-                blue = new Mat();
-
-        Imgproc.cvtColor(takeMatPicture(), start, Imgproc.COLOR_RGB2HSV_FULL);
-        Imgproc.resize(start,start,new Size(),RESIZE_FACT,RESIZE_FACT,Imgproc.INTER_LINEAR);
-
-        Imgproc.blur(start, start, JEWELS_BSIZE);
-
-        Core.inRange(start, RED_L, RED_H, red);
-        Core.inRange(start, BLUE_L, BLUE_H, blue);
-
-        jewelConfig = JewelConfig.intCOMs(getCOM(red), getCOM(blue));
-    }
-    @Deprecated public VisualsHandler(OpMode om) {
-        opmode = om;
-        vuforia = new VuforiaHandler(opmode,false);
-        OpenCVLoader.initDebug();
-        // Initialize preview
-        ImageView iv = new ImageView(opmode.hardwareMap.appContext);
-        iv.setId(PREVIEW_ID);
-        layout = new LayoutInterfacer(opmode, getPreviewContainer(), iv);
-        setPreview(generateIntro(getPreviewContainer().getWidth()));
     }
 
 }

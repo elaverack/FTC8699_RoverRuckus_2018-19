@@ -40,7 +40,7 @@ public class Enums {
     public enum Color {
         RED, BLUE, ERROR, RED_PARK, BLUE_PARK;
 
-        public static Color readCS (ColorSensor s) {
+        public static Color readColorSensor(ColorSensor s) {
             if (s.red() > s.blue()) return RED;
             if (s.blue() > s.red()) return BLUE;
             return ERROR;
@@ -62,7 +62,6 @@ public class Enums {
         }
 
         public boolean parkAuto() { return this == RED_PARK || this == BLUE_PARK; }
-
         public Color removePark() {
             if (!parkAuto()) return this;
             switch (this) {
@@ -143,15 +142,6 @@ public class Enums {
                 default: return 0;
             }
         }
-
-        @Deprecated public double distanceToAlignCryptobox (Color allianceColor, Vector3 position) { // GO RIGHT IF < 0
-            if (this == JEWEL_ONLY || this == ERROR || position == null) return 0;
-            double currentPosition = this == CORNER ? Math.abs(position.z) : 2;
-            double distance = this == CORNER ? currentPosition - crypto_center_to_most_left - 36 : currentPosition + crypto_center_to_most_left;
-            distance += crypto_margin;
-            if (allianceColor == Color.BLUE) distance *= -1;
-            return distance;
-        }
     }
 
     /** KEY COLUMN ENUM */
@@ -192,10 +182,6 @@ public class Enums {
                         }
                     }
                 case 1: ppi = 50; break;
-//                    double x = divs[0]; ret = 3;
-//                    if (allianceColor == Color.BLUE) { if (x > 630) ret = 8; else if (x > 480) ret = 6; }
-//                    else if (x < 90) ret = 8; else if (x < 240) ret = 6;
-//                    return ret;
                 case 2: ppi = Math.abs(divs[1] - divs[0]) / 7.65; break;
                 case 3: ppi = Math.abs(divs[2] - divs[0]) / 15.3; break;
                 default: return ret;
@@ -231,23 +217,6 @@ public class Enums {
                 default:        return "ERROR";
             }
         }
-
-        @Deprecated public double inchesToColumnFromVumark (int alliancePositionID) { // NOTE: return a v3 with the specific axis of distance changed
-            if (this == ERROR) return 0;
-            float ret = box_start_inches;
-            float column_adjustment = 0;
-            switch (this) {
-                case LEFT:  column_adjustment += column_adjustment_inches;
-                case RIGHT: column_adjustment -= column_adjustment_inches;
-            }
-            switch (alliancePositionID) { // < 0 means left
-                case corner_id + red_id:    return ret+column_adjustment- phone_glyph_offset;
-                case side_id + red_id:      /*ret -= mark_offset_inches; return -(ret+column_adjustment-phone_glyph_offset)*/ return -column_adjustment;
-                case corner_id + blue_id:   return column_adjustment-ret- phone_glyph_offset;
-                case side_id + blue_id:     /*ret += mark_offset_inches; return ret-column_adjustment+phone_glyph_offset;*/ return -column_adjustment;
-                default:                    return 0;
-            }
-        }
     }
 
     /** JEWEL CONFIG ENUM */
@@ -280,10 +249,5 @@ public class Enums {
         }
 
         public String toString () { return toString; }
-
-        @Deprecated public static JewelConfig intCOMs(Point red, Point blue) {
-            if (red.x < blue.x) return RED_BLUE;
-            return BLUE_RED;
-        }
     }
 }

@@ -27,7 +27,7 @@ public class RotateTest extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        robot.turnToAngle(90,true, .5f);
+        robot.turnCentrallyPastAngle(this, 90, .5f);
         runtime.reset();
         while (runtime.seconds() < 3);
         int theta = robot.theta();
