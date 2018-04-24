@@ -158,7 +158,8 @@ public class Lift {
     void lift () { l.setTargetPosition(lift1); l.setPower(liftS); eGood = false; }
     void lift2 () { l.setTargetPosition(lift2); l.setPower(liftS); eGood = false; }
     boolean grounded () { return l.getCurrentPosition() < Rotater.flip_position; }
-    boolean goingUp () { return l.getTargetPosition() == lift1; }
+    boolean grounding () { return l.getTargetPosition() == lift0; }
+    boolean goingUp () { return l.getTargetPosition() >= lift1; }
     @Deprecated public void waitForEncoders () { while (!update_encoders(l)); }
     void waitForEncoders (LinearOpMode opmode) { while (!update_encoders(l) && opmode.opModeIsActive()); }
 

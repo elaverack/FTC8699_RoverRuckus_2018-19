@@ -10,7 +10,7 @@ public class Rotater {
 
     private static final int
             not_flipped_pre = 80,
-            not_flipped_pos = 30,
+            not_flipped_pos = 0,
             flipped_pre = 1580,
             flipped_pos = 1640;
     public static final int
@@ -30,6 +30,7 @@ public class Rotater {
             fixed = false,      // Boolean for fixing button logic
             lifted = false,     // Boolean to determine whether or not the lift has gone up a little bit for rotating
             straightened = false,
+            stopRoted = false,
             pre = true;
 
     private ElapsedTime time;
@@ -54,10 +55,10 @@ public class Rotater {
                     r.setPower(pos_power);
                     if (lifted) { lift.ground(); lifted = false; }
                     pre = false;
+                    flipped = !flipped;
                     return;
                 }
                 rotating = false;
-                flipped = !flipped;
                 pre = true;
                 return;
             } else return;
@@ -68,12 +69,13 @@ public class Rotater {
         if (!b) return;
 
         if (!rotated) { // Start rotating
-            if (lift.grounded()) { lifted = true; lift.setPosition(flip_position); }
+            if ((lift.grounded() || lift.grounding()) && !lift.goingUp()) { lifted = true; lift.setPosition(flip_position); }
             if (flipped) {
                 r.setTargetPosition(not_flipped_pre);
             } else r.setTargetPosition(flipped_pre);
             if (!lifted) r.setPower(pre_power);
-            rotating = true;
+            rotating =  true;
+            rotated = true;
             time.reset();
         }
     }
@@ -82,13 +84,14 @@ public class Rotater {
         if (straightened && !b) straightened = false;
         if (!b) return;
         if (!straightened) {
-            if (lift.grounded() && !lift.goingUp()) { lifted = true; lift.setPosition(flip_position); }
+            if ((lift.grounded() || lift.grounding()) && !lift.goingUp()) { lifted = true; lift.setPosition(flip_position); }
             if (flipped) {
                 r.setTargetPosition(flipped_pre);
             } else r.setTargetPosition(not_flipped_pre);
             if (!lifted) r.setPower(pre_power);
             rotating = true;
             flipped = !flipped;
+            straightened = true;
             time.reset();
         }
     }
@@ -112,12 +115,32 @@ public class Rotater {
         if (fixed && !b) { fixed = false; return; }
         if (!b) return;
         if (!fixed) {
-            if (lift.grounded()) { lifted = true; lift.setPosition(flip_position); }
+            if ((lift.grounded() || lift.grounding()) && !lift.goingUp()) { lifted = true; lift.setPosition(flip_position); }
             r.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             r.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             r.setTargetPosition(-flipped_pre);
             r.setPower(pre_power);
             fixing = true;
+            rotating = false;
+            pre = true;
+            fixed = true;
+        }
+    }
+
+    public void stopRotation (boolean b) {
+        if (stopRoted && !b) { stopRoted = false; return; }
+        if (!b) return;
+        if (!stopRoted) {
+            r.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            r.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            r.setTargetPosition(0);
+            r.setPower(0);
+            if (lifted) { lift.ground(); lifted = false; }
+            pre = true;
+            flipped = false;
+            rotating = false;
+            fixing = false;
+            stopRoted = true;
         }
     }
 

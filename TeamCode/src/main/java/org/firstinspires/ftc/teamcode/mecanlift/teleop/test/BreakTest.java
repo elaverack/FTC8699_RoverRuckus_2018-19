@@ -21,7 +21,6 @@ public class BreakTest extends OpMode {
 
     @Override
     public void init() {
-
         dim = hardwareMap.deviceInterfaceModule.get("dim");
         beam = hardwareMap.touchSensor.get("beam");
 
@@ -32,15 +31,10 @@ public class BreakTest extends OpMode {
     }
 
     @Override
-    public void init_loop() {
-    }
-
-    @Override
     public void start() { runtime.reset(); }
 
     @Override
     public void loop() {
-
         if (ledOn && beam.isPressed()) {
             dim.setDigitalChannelState(0, false);
             ledOn = false;
@@ -48,12 +42,6 @@ public class BreakTest extends OpMode {
             dim.setDigitalChannelState(0, true);
             ledOn = true;
         }
-
-        telemetry.addData("Status", "Running: " + runtime.toString());
-    }
-
-    @Override
-    public void stop() {
     }
 
 }

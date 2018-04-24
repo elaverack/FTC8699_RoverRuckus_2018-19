@@ -64,8 +64,8 @@ public class Mecanlift {
             ccwJewelAngle = 10,                         // Gyro angle to turn to when turning counter-clockwise to hit off jewel
             cwJewelAngle = 350,                         // Gyro angle to turn to when turning clockwise to hit off jewel
 
-            angle_thres = 5;                            // Angle threshold for turning using gyro
-    public static final int
+            angle_thres = 5,                            // Angle threshold for turning using gyro
+
             indicatorPort = 0;
 
     private static final AlignmentCircle
@@ -118,8 +118,8 @@ public class Mecanlift {
             jewelN = "jewel",                           // The jewel arm servo name
             colorN = "color",                           // The jewel arm color sensor name
             ultrasonicSensorN = "ultra",                // The ultrasonic sensor name
-            gyroN = "gyro";                             // The gyro sensor name
-    public static final String
+            gyroN = "gyro",                             // The gyro sensor name
+
             dimN = "dim",                               // The device interface module name
             topBeamN = "tbeam",                         // The top beam sensor name
             bottomBeamN = "bbeam";                      // The bottom beam sensor name
@@ -230,7 +230,6 @@ public class Mecanlift {
         debug("Setting up teleop sensors...");
 
         gyro = opmode.hardwareMap.gyroSensor.get(gyroN);
-
         dim = opmode.hardwareMap.deviceInterfaceModule.get(dimN);
         dim.setDigitalChannelMode(indicatorPort, DigitalChannel.Mode.OUTPUT);
         dim.setDigitalChannelState(indicatorPort, false);
@@ -388,7 +387,8 @@ public class Mecanlift {
     }
     public void operateMechanisms() {
         /** LIFT */
-        lift.run(lift_pos_tog(), lift_ground(), lift_direct_drive_up(), lift_direct_drive_down(), (opmode.gamepad2.right_stick_button && opmode.gamepad2.left_stick_button));
+        lift.run(lift_pos_tog(), lift_ground(), lift_direct_drive_up(), lift_direct_drive_down(),
+                (opmode.gamepad2.right_stick_button && opmode.gamepad2.left_stick_button));
 
         /** GRABBER */
         boolean a = toggle_bottom(), b = toggle_top();
@@ -406,9 +406,11 @@ public class Mecanlift {
         rot.doRotation(flip_grabber());
         rot.doStraighten(rot_straighten());
         rot.doRotFix(fix_rotate());
+        rot.stopRotation(opmode.gamepad2.dpad_right && (opmode.gamepad2.right_trigger < .5));
 
         doRelicArm(
                 opmode.gamepad2.right_stick_y,
+                opmode.gamepad2.right_trigger,
                 opmode.gamepad2.y,
                 opmode.gamepad2.x
         );
@@ -422,12 +424,13 @@ public class Mecanlift {
             else if (!indOn && !topBeam.isPressed()) indicatorOn();
         }
     }
-    public void runAutoMecanisms () {
+    public void runAutoMechanisms () {
         /** LIFT */
-        lift.run(lift_pos_tog(), lift_ground(), lift_direct_drive_up(), lift_direct_drive_down(), (opmode.gamepad2.right_stick_button && opmode.gamepad2.left_stick_button));
+        lift.run(lift_pos_tog(), lift_ground(), lift_direct_drive_up(), lift_direct_drive_down(),
+                (opmode.gamepad2.right_stick_button && opmode.gamepad2.left_stick_button));
 
         /** GRABBER */
-        boolean a = opmode.gamepad1.a, b = opmode.gamepad1.b;
+        boolean a = opmode.gamepad1.a || opmode.gamepad2.a, b = toggle_top();
         if (!rot.flipped) {
             bl.tob(a);
             br.tob(a);
@@ -440,7 +443,7 @@ public class Mecanlift {
             tr.tob(a);
         }
         runIndicator();
-        if (!(opmode.gamepad1.left_trigger > .5)) {
+        if (!(opmode.gamepad1.left_trigger > .5 || opmode.gamepad2.back)) {
             if (!rot.flipped && br.isOpened() && !bottomBeam.isPressed()) {
                 br.close();
                 bl.close();
@@ -458,9 +461,11 @@ public class Mecanlift {
         rot.doRotation(flip_grabber());
         rot.doStraighten(rot_straighten());
         rot.doRotFix(fix_rotate());
+        rot.stopRotation(opmode.gamepad2.dpad_right && (opmode.gamepad2.right_trigger < .5));
 
         doRelicArm(
                 opmode.gamepad2.right_stick_y,
+                opmode.gamepad2.right_trigger,
                 opmode.gamepad2.y,
                 opmode.gamepad2.x
         );
@@ -540,8 +545,8 @@ public class Mecanlift {
         up.open();
         grab.open();
     }
-    private void doRelicArm (float motorPower, boolean togGrab, boolean togUp) {
-        relicMotor.setPower(motorPower);
+    private void doRelicArm (float motorPower, float relicTrigger, boolean togGrab, boolean togUp) {
+        relicMotor.setPower(motorPower * relicTrigger);
         grab.tob(togGrab);
         up.tob(togUp);
     }

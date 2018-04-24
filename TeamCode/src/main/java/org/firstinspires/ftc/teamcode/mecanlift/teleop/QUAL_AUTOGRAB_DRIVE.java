@@ -32,7 +32,7 @@ public class QUAL_AUTOGRAB_DRIVE extends OpMode {
     class runDrive implements Runnable {
 
         public void run() {
-            while (!Thread.interrupted()) { robot.runAutoMecanisms(); }
+            while (!Thread.interrupted()) { robot.runAutoMechanisms(); }
             onStop();
         }
 
