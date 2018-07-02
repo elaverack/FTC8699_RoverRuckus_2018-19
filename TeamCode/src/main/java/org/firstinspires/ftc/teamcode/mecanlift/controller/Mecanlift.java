@@ -38,7 +38,7 @@ public class Mecanlift {
     private static final double                         // Grabber servo positions
             blo = 0.235,//157,                          // Bottom left open
             blc = 0.421,                                // Bottom left close
-            bro = 0.569,                                // Bottom right open
+            bro = 0.65,//0.569,                                // Bottom right open
             brc = 0.4406,                               // Bottom right close
             tlo = 0.804,                                // Top left open
             tlc = 0.627,                                // Top left close
