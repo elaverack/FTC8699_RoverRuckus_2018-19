@@ -68,7 +68,7 @@ public class VisualsHandler {
             " sat.png",
             " val.png"
     };
-    private final String PHOTO_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
+    private static final String PHOTO_DIRECTORY = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
 
     /** VARIABLES */
     public int vertx = 20, hory = 20;
@@ -437,7 +437,7 @@ public class VisualsHandler {
         Imgproc.putText(orig, l2, points[1], font, size, color, thickness);
     }
 
-    private void savePhoto (Mat mat, String fileName) {
+    static void savePhoto (Mat mat, String fileName) {
 
         Bitmap bmp = Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.RGB_565);
         Utils.matToBitmap(mat, bmp);
