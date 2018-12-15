@@ -20,17 +20,18 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.visuals.AlignmentCircle;
-import org.firstinspires.ftc.teamcode.visuals.Vector3;
-import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
-import org.firstinspires.ftc.teamcode.visuals.VuforiaHandler;
+import org.firstinspires.ftc.teamcode.frontier.control.ToggleServo;
+import org.firstinspires.ftc.teamcode.visuals_old.AlignmentCircle;
+import org.firstinspires.ftc.teamcode.visuals_old.Vector3;
+import org.firstinspires.ftc.teamcode.visuals_old.VisualsHandler;
+import org.firstinspires.ftc.teamcode.visuals_old.VuforiaHandler;
 import org.opencv.core.Point;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.firstinspires.ftc.teamcode.Enums.*;
-import static org.firstinspires.ftc.teamcode.visuals.Vector3.round;
+import static org.firstinspires.ftc.teamcode.Enums_old.*;
+import static org.firstinspires.ftc.teamcode.visuals_old.Vector3.round;
 
 public class Mecanlift {
 

@@ -1,8 +1,8 @@
 package org.firstinspires.ftc.teamcode.visuals;
 
 import android.graphics.PointF;
-import android.util.Log;
 
+import org.firstinspires.ftc.teamcode.visuals_old.*;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;

@@ -8,7 +8,7 @@ import org.firstinspires.ftc.teamcode.mecanlift.controller.Mecanlift;
 
 // Created on 2/15/2018 at 9:53 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.mecanlift.teleop.test
 
-@TeleOp(name = "QUAL IND DRIVE", group = "Iterative Opmode")
+@TeleOp(name = "Mecanlift Ind. Drive", group = "old")
 //@Disabled
 public class QUAL_IND_DRIVE extends OpMode {
 
