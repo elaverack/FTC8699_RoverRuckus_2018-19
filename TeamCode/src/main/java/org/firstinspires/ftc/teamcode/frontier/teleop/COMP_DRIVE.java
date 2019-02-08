@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.frontier.control.Frontier;
 // Created on 12/14/2018 at 1:26 PM by Chandler, originally part of ftc_app under org.firstinspires.ftc.teamcode.frontier.teleop
 
 @TeleOp(name = "COMP DRIVE", group = "comp")
-//@Disabled
+@Disabled
 public class COMP_DRIVE extends OpMode {
     
     Frontier robot;

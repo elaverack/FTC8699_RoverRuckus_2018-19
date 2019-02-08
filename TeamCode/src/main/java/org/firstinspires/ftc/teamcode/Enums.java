@@ -82,8 +82,24 @@ public class Enums {
     /** FIELD POSITION ENUM FOR AUTONOMOUS MOVEMENT */
     public enum FieldPosition {
         
-        CRATER, DEPOT, ERROR
+        CRATER, DEPOT, ERROR, DEPOT_NO_SAMPLE
         
+    }
+    
+    /** MINERAL TYPE ENUM FOR MINERAL IDENTIFICATION */
+    public enum Mineral {
+        GOLD("gold"), SILVER("silver"), ERROR("error");
+        
+        private final String tos;
+        
+        Mineral (String t) { tos = t; }
+        
+        public String toString () { return tos; }
+        
+        public static Mineral identify (byte colorIndex) {
+            if (colorIndex == 48 || colorIndex == 52 || colorIndex == 56) return GOLD;
+            else return SILVER;
+        }
     }
     
 }

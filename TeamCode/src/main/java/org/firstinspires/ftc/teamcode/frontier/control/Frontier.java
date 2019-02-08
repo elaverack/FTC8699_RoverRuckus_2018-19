@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.teamcode.new_frontier.control.ToggleServo;
 import org.firstinspires.ftc.teamcode.visuals.VisualsHandler;
 
 import java.text.DecimalFormat;
@@ -32,28 +33,33 @@ public class Frontier {
             LBM_N   = "lb",
             LIFTM_N = "l",
             LIFTS_N = "lock",
-            MARKS_N = "mark";
+            MARKLS_N = "markl",
+            MARKRS_N = "markr";
     
     private static final double
-            UNLOCK_P                = .5,
-            LOCK_P                  = .4,
+            UNLOCK_P                = .85,
+            LOCK_P                  = .95,
             MARKH_P                 = .4,
-            MARKD_P                 = .2,
+            MARKD_P                 = 0.0,
+            MARK_LEFT_HOLD          = .25,
+            MARK_LEFT_DROP          = .5,
+            MARK_RIGHT_HOLD         = .16,
+            MARK_RIGHT_DROP         = .4,
             TURN_KP                 = 6,
             TURN_KI                 = 2.5,
             TURN_KD                 = 0.02,
             STRAFE_INCHES_PER_REV   = 8.75;
     
     private static final int
-            ENCODER_PER_REV = 1440;
+            ENCODER_PER_REV = 560;
     
     private static DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
     
     /** INSTANCE VARS */
     private OpMode opmode;
     private DcMotor rf, rb, lf, lb;
-    private Servo mark;
-    private Latcher latcher;
+    private Servo markl, markr;
+    private Latcher     latcher;
     private ToggleServo lock;
     
     private double powerRF, powerRB, powerLF, powerLB;
@@ -80,10 +86,10 @@ public class Frontier {
         lf = opmode.hardwareMap.dcMotor.get(LFM_N);
         lb = opmode.hardwareMap.dcMotor.get(LBM_N);
     
-        rf.setDirection(DcMotorSimple.Direction.REVERSE);
-        rb.setDirection(DcMotorSimple.Direction.REVERSE);
-        lf.setDirection(DcMotorSimple.Direction.FORWARD);
-        lb.setDirection(DcMotorSimple.Direction.FORWARD);
+        rf.setDirection(DcMotorSimple.Direction.FORWARD);
+        rb.setDirection(DcMotorSimple.Direction.FORWARD);
+        lf.setDirection(DcMotorSimple.Direction.REVERSE);
+        lb.setDirection(DcMotorSimple.Direction.REVERSE);
     
         rf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -104,7 +110,8 @@ public class Frontier {
     
         lock = new ToggleServo(opmode.hardwareMap.servo.get(LIFTS_N), UNLOCK_P, LOCK_P);
         
-        mark = opmode.hardwareMap.servo.get(MARKS_N);
+        markl = opmode.hardwareMap.servo.get(MARKLS_N);
+        markr = opmode.hardwareMap.servo.get(MARKRS_N);
         
     }
     
@@ -133,7 +140,7 @@ public class Frontier {
         t.reset();
         while (!imu.isGyroCalibrated()) {
             if ((int)t.seconds() % 3 == 0) {
-                arrangement = VisualsHandler.takePreviewAndSample();
+                if (position != FieldPosition.DEPOT_NO_SAMPLE) arrangement = VisualsHandler.takePreviewAndSample();
                 debug("Arrangement read as " + arrangement);
                 tele("Status", "Calibrating gyro...");
                 telewithup("Arrangement", arrangement);
@@ -142,7 +149,7 @@ public class Frontier {
         
         while (!lopmode.isStarted()) {
             if ((int)t.seconds() % 3 == 0) {
-                arrangement = VisualsHandler.takePreviewAndSample();
+                if (position != FieldPosition.DEPOT_NO_SAMPLE) arrangement = VisualsHandler.takePreviewAndSample();
                 debug("Arrangement read as " + arrangement);
                 tele("Status", "Initialized.");
                 telewithup("Arrangement", arrangement);
@@ -154,16 +161,17 @@ public class Frontier {
     public void start () {
     
         lock.open();
-        mark.setPosition(MARKH_P);
+        markl.setPosition(MARK_LEFT_HOLD);
+        markr.setPosition(MARK_RIGHT_HOLD);
         
     }
     
     public void drive () {
     
         float
-                straight    = -opmode.gamepad1.left_stick_y,
-                strafe      = opmode.gamepad1.left_stick_x,
-                rotate      = opmode.gamepad1.right_stick_x;
+                straight    = -opmode.gamepad1.right_stick_y,
+                strafe      = opmode.gamepad1.right_stick_x,
+                rotate      = opmode.gamepad1.left_stick_x;
         powerRF = straight;
         powerRB = straight;
         powerLF = straight;
@@ -216,6 +224,7 @@ public class Frontier {
         Thread t = new Thread(sampler);
         t.start();
         
+        
         // drop down
         latcher.raise();
         
@@ -227,84 +236,94 @@ public class Frontier {
         latcher.waitFor(lopmode);
         
         // drive backwards 12in
-        if (arrangement == SampleArrangement.MIDDLE) forwardInches(-28, 1);
-        else forwardInches(-17, 1);
+        //if (arrangement == SampleArrangement.MIDDLE && position != FieldPosition.DEPOT_NO_SAMPLE) forwardInches(-28, 1);
+        /*else*/
+        if (position == FieldPosition.DEPOT_NO_SAMPLE) forwardInches(-27, .5);
+        else forwardInches(-17, .5);
         
         latcher.lower(); // lower latcher back down for teleop
         
-        double correction = 26; // inches to strafe to clear the sampling field
+        latcher.waitFor(lopmode);
         
-        // strafe according to arragement
-        switch (arrangement) {
-            case LEFT:
-                strafeInches(16, 1, true);
-                correction -= 16;
-                break;
-            case RIGHT:
-                strafeInches(10, 1, false);
-                correction += 10;
-        }
-        
-        if (arrangement != SampleArrangement.ERROR) {
-            // back up 20in
-            if (arrangement != SampleArrangement.MIDDLE) forwardInches(-11, 1);
-    
-            // drive back forward 14in
-            forwardInches(11, 1);
-        }
-        
-        // clear the sampling field (by driving 26in right of center)
-        debug("Correction is: " + correction);
-        strafeInches(correction, 1, true);
-        
-        // rotate to be flat against the wall
-        if (position == FieldPosition.DEPOT) {
-            // turn flat to wall
-            turnDegrees(45, .5, false);
-            
-            // back up to wall
-            forwardInches(-14, 1);
-            
-            // strafe to depot
-            strafeInches(36, 1, false);
-        }
-        else if (position == FieldPosition.CRATER) {
-            
-            turnDegrees(45, .5, true);
-            
-            strafeInches(10, 1, true);
-            
-            forwardInches(52, 1);
-            
-            turnDegrees(90, .8, true);
-        }
-        
-        
-        // drop marker
-        mark.setPosition(MARKD_P);
-        
-//        if (position == FieldPosition.CRATER) {
+//        double correction = 26; // inches to strafe to clear the sampling field
+//
+//        // strafe according to arragement
+//        if (position != FieldPosition.DEPOT_NO_SAMPLE) {
+//            switch (arrangement) {
+//                case LEFT:
+//                    strafeInches(16, 1, true);
+//                    correction -= 16;
+//                    break;
+//                case RIGHT:
+//                    strafeInches(10, 1, false);
+//                    correction += 10;
+//            }
+//
+//            if (arrangement != SampleArrangement.ERROR) {
+//                // back up 20in
+//                if (arrangement != SampleArrangement.MIDDLE) forwardInches(-11, 1);
+//
+//                // drive back forward 14in
+//                forwardInches(11, 1);
+//            }
+//        }
+//
+//        // clear the sampling field (by driving 26in right of center)
+//        debug("Correction is: " + correction);
+//        strafeInches(correction, 1, true);
+//
+//        // rotate to be flat against the wall
+//        if (position == FieldPosition.DEPOT || position == FieldPosition.DEPOT_NO_SAMPLE) {
+//            // turn flat to wall
+//            turnDegrees(45, .5, false);
+//
+//            // back up to wall
+//            forwardInches(-14, 1);
+//
+//            // strafe to depot
+//            strafeInches(44, 1, false);
+//        }
+//        else if (position == FieldPosition.CRATER) {
+//
+//            turnDegrees(45, .5, true);
+//
+//            strafeInches(10, 1, true);
+//
+//            forwardInches(52, 1);
+//
 //            turnDegrees(90, .8, true);
-//            forwardInches(54, 1);
+//        }
+//
+//
+//        // drop marker
+//        //markl.setPosition(MARKD_P);
+//        markl.setPosition(MARK_LEFT_DROP);
+//        markr.setPosition(MARK_RIGHT_DROP);
+//
+////        if (position == FieldPosition.CRATER) {
+////            turnDegrees(90, .8, true);
+////            forwardInches(54, 1);
+////        } else
+//
+//        // drive and park in crater
+//        if (position == FieldPosition.CRATER) {
+//            strafeInches(56, 1, true);
 //        } else
+//        strafeInches(68, 1, true);
+//
+//        // reset robot for teleop
+//        markl.setPosition(MARK_LEFT_HOLD);
+//        markr.setPosition(MARK_RIGHT_HOLD);
         
-        // drive and park in crater
-        if (position == FieldPosition.CRATER) {
-            strafeInches(56, 1, true);
-        } else
-        strafeInches(60, 1, true);
-        
-        // reset robot for teleop
-        mark.setPosition(MARKH_P);
         VisualsHandler.tempSetupStop();
     
     }
     
-    private void forwardInches (double inches, double maxPower) {
+    public void forwardInches (double inches, double maxPower) {
         if (!lopmode.opModeIsActive()) return;
         int goalPosition = (int)(ENCODER_PER_REV * (inches / (4 * Math.PI)));
         debug("Goal position: " + goalPosition);
-        int toSlow = goalPosition / 4;
+        int toSlow = 1000;
         ElapsedTime t = new ElapsedTime();
         
         if (rf.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
@@ -356,11 +375,11 @@ public class Frontier {
         
     }
     
-    private void strafeInches (double inches, double maxPower, boolean right) {
+    public void strafeInches (double inches, double maxPower, boolean right) {
         if (!lopmode.opModeIsActive()) return;
         inches = Math.abs(inches);
         int goalPosition = (int)(ENCODER_PER_REV * (inches / STRAFE_INCHES_PER_REV)), dir = right ? 1 : -1;
-        int toSlow = goalPosition / 4;
+        int toSlow = 1000;
         ElapsedTime t = new ElapsedTime();
     
         if (rf.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
@@ -411,7 +430,7 @@ public class Frontier {
         
     }
     
-    private void turnDegrees (double degrees, double maxPower, boolean clockwise) { // clockwise is + direction for imul
+    public void turnDegrees (double degrees, double maxPower, boolean clockwise) { // clockwise is + direction for imul
         if (!lopmode.opModeIsActive()) return;
         int dir = clockwise ? 1 : -1;
         degrees = dir*(Math.abs(degrees) + 2 * (Math.abs(degrees) / 100)); // ensure no ones giving me a negative rotation. that's for the clockwise var

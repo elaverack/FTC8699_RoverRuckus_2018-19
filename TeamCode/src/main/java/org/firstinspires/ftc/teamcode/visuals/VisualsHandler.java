@@ -11,8 +11,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.vuforia.CameraDevice;
 
 import org.firstinspires.ftc.teamcode.R;
-import org.firstinspires.ftc.teamcode.visuals_old.LayoutInterfacer;
-import org.firstinspires.ftc.teamcode.visuals_old.VuforiaHandler;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;

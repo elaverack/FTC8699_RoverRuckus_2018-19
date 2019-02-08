@@ -14,14 +14,14 @@ public class Latcher {
             thres = 10;     // Threshold for encoders
     
     private static final int
-            LIFT_ALIGN      = 3680,     // align position
-            LIFT_HOOK       = 8560,     // hook position
-            LIFT_UNHOOK     = 10450;    // unhook position
+            LIFT_ALIGN      = 2770,     // align position
+            LIFT_HOOK       = 5560,     // hook position
+            LIFT_UNHOOK     = 7248;    // unhook position
     
     private static final double
-            UP_S        = 1,    // Speed slide moves at when going to positions
+            UP_S        = .5,    // Speed slide moves at when going to positions
             LOWER_S     = 1,   // Speed slide moves at when lowering robot
-            DIR_S       = .5;   // Speed slide moves at when directly controlled
+            DIR_S       = .3;   // Speed slide moves at when directly controlled
     
     private DcMotor l;
     private boolean
@@ -63,10 +63,10 @@ public class Latcher {
         if (!b) return;
         if (!upd) {
             int cur = l.getCurrentPosition();
-            if (cur >= 0 && cur < LIFT_ALIGN) toAlign();
-            else if (cur >= LIFT_ALIGN && cur < LIFT_HOOK) toHook();
-            else if (cur >= LIFT_HOOK && cur < LIFT_UNHOOK) toUnhook();
-            else if (cur < 0) toGround();
+            if (cur >= 0 - thres && cur < LIFT_ALIGN - thres) toAlign();
+            else if (cur >= LIFT_ALIGN - thres && cur < LIFT_HOOK - thres) toHook();
+            else if (cur >= LIFT_HOOK - thres && cur < LIFT_UNHOOK - thres) toUnhook();
+            else if (cur < 0 - thres) toGround();
             upd = true;
         }
     }
@@ -75,10 +75,10 @@ public class Latcher {
         if (!b) return;
         if (!downd) {
             int cur = l.getCurrentPosition();
-            if (cur > 0 && cur <= LIFT_ALIGN) toGround();
-            else if (cur > LIFT_ALIGN && cur <= LIFT_HOOK) toAlign();
-            else if (cur > LIFT_HOOK && cur <= LIFT_UNHOOK) toHook();
-            else if (cur > LIFT_UNHOOK) toUnhook();
+            if (cur > thres && cur <= LIFT_ALIGN + thres) toGround();
+            else if (cur > LIFT_ALIGN + thres && cur <= LIFT_HOOK + thres) toAlign();
+            else if (cur > LIFT_HOOK + thres && cur <= LIFT_UNHOOK + thres) toHook();
+            else if (cur > LIFT_UNHOOK + thres) toUnhook();
             downd = true;
         }
     }
