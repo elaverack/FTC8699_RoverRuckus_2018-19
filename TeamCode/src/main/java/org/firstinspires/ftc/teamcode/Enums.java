@@ -18,10 +18,12 @@ public class Enums {
         LEFT(0, "left"), MIDDLE(1, "middle"), RIGHT(2, "right"), ERROR(-1, "error");
         
         public static Scalar
-                silverLow   = new Scalar(200,200,200),
+                silverLow   = new Scalar(180,180,180),
                 silverHigh  = new Scalar(255,255,255),
                 goldLow     = new Scalar(0,120,200),
                 goldHigh    = new Scalar(150,255,255);
+        
+        public static int crop = 50;
         
         private final int toint;
         private final String tostring;

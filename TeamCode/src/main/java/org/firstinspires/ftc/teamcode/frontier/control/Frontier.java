@@ -224,7 +224,6 @@ public class Frontier {
         Thread t = new Thread(sampler);
         t.start();
         
-        
         // drop down
         latcher.raise();
         

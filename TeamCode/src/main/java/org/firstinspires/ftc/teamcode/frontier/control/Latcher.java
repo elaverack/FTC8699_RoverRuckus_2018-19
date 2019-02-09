@@ -19,9 +19,9 @@ public class Latcher {
             LIFT_UNHOOK     = 7248;    // unhook position
     
     private static final double
-            UP_S        = .5,    // Speed slide moves at when going to positions
+            UP_S        = .7,    // Speed slide moves at when going to positions
             LOWER_S     = 1,   // Speed slide moves at when lowering robot
-            DIR_S       = .3;   // Speed slide moves at when directly controlled
+            DIR_S       = .6;   // Speed slide moves at when directly controlled
     
     private DcMotor l;
     private boolean
@@ -137,6 +137,11 @@ public class Latcher {
     public void lower () {
         l.setTargetPosition(0);
         l.setPower(UP_S);
+        eGood = false;
+    }
+    public void unlock () {
+        l.setTargetPosition(-20);
+        l.setPower(LOWER_S);
         eGood = false;
     }
     

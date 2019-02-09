@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.os.Environment;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
@@ -19,6 +20,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -85,104 +87,187 @@ public class VisualsHandler {
     }
     private static SampleArrangement sample (Mat start) {
         
-        Mat silverMask = new Mat(), goldMask = new Mat();
+        Rect roi = new Rect(0, SampleArrangement.crop,
+                            start.width(),
+                            start.height() - 2* SampleArrangement.crop);
+        
+        start = new Mat(start, roi);
+    
+        Mat
+                silverMask = new Mat(start.rows(), start.cols(), CvType.CV_8UC1),
+                goldMask = new Mat(start.rows(), start.cols(), CvType.CV_8UC1),
+                hsv = new Mat();
+        silverMask.setTo(new Scalar(0));
+        goldMask.setTo(new Scalar(0));
+    
+        //setPreview(matToBitmap(start, Bitmap.Config.RGB_565));
         
         Imgproc.cvtColor(start, start, Imgproc.COLOR_RGB2BGR);
-        
+        Imgproc.cvtColor(start, hsv, Imgproc.COLOR_BGR2HSV_FULL);
+    
         double spacingThres = 50;
-        
+    
         Core.inRange(start, SampleArrangement.silverLow, SampleArrangement.silverHigh, silverMask); // mask for silver mineral
-        Core.inRange(start, SampleArrangement.goldLow, SampleArrangement.goldHigh, goldMask); // mask for gold mineral
-        
+        Core.inRange(hsv, new Scalar(0, 150, 100), new Scalar(50, 255, 255), goldMask); // mask for gold mineral
+    
+        setPreview(matToBitmap(silverMask, Bitmap.Config.RGB_565));
+        //Windows.showImg("pre morph", silverMask.clone());
+    
         Imgproc.morphologyEx(silverMask, silverMask, Imgproc.MORPH_OPEN, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(5, 5))); // clear out noise of silver mask
         Imgproc.morphologyEx(silverMask, silverMask, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(10, 10))); // close holes in silver mask
         Imgproc.morphologyEx(goldMask, goldMask, Imgproc.MORPH_OPEN, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(4, 4))); // clear out noise of gold mask
         Imgproc.morphologyEx(goldMask, goldMask, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(10, 10))); // close holes in gold mask
-        
+    
         //Windows.showImg("start", start.clone());
         //Windows.showImg("silver mask", silverMask.clone());
         //Windows.showImg("gold mask", goldMask.clone());
-        
-        MatOfPoint[] silCons = SampleArrangement.circularContours(silverMask, .6, 1).toArray(new MatOfPoint[0]); // get all the roughly circular contours in silver mask
-        MatOfPoint[] golCons = SampleArrangement.rectangularContours(goldMask, .5, 1).toArray(new MatOfPoint[0]); // get all the roughly rectangular contours in gold mask
-        
-        Point[] silCens = new Point[silCons.length]; // array for storing the silver contour centers
-        int[]   silRadi = new int[silCons.length]; // array for storing the silver contour radii
-        goldMask.setTo(new Scalar(0)); // clear gold mask so we can redraw only the rectangular contours
-        
-        for (int i = 0; i < silCons.length; i++) { // get all the centers and radii of the circular contours in silver mask
-            Point center = new Point();
-            float[] radius = new float[1];
-            
-            Imgproc.minEnclosingCircle(new MatOfPoint2f(silCons[i].toArray()), center, radius);
-            
-            silCens[i] = center;
-            silRadi[i] = (int)Math.ceil(radius[0]);
-            
-            Imgproc.circle(start, silCens[i], silRadi[i], new Scalar(0,0,255), -1);
+    
+        List<MatOfPoint> silCons = SampleArrangement.circularContours(silverMask, .6, 1); // get all the roughly circular contours in silver mask
+        List<MatOfPoint> golCons = SampleArrangement.rectangularContours(goldMask, .5, 1); // get all the roughly rectangular contours in gold mask
+    
+        for (int i = 0; i < silCons.size(); i++) {
+            Mat cons = new Mat(start.rows(), start.cols(), CvType.CV_8UC1); // destination mat
+            cons.setTo(new Scalar(0));
+            Imgproc.drawContours(cons, silCons, i, new Scalar(255), -1);
+            //Windows.showImg("con sil" + i, cons.clone());
+            if (Imgproc.moments(cons, true).get_m00() < 3500) {
+                Log.d("SAMPLING", "removed sil: " + Imgproc.moments(cons, true).get_m00());
+                silCons.remove(i);
+                i--;
+            } //else Windows.showImg("con sil" + i, cons.clone());
         }
-        
-        for (int i = 0; i < golCons.length; i++) // redraw all the rectangular contours in gold mask
-            Imgproc.drawContours(goldMask, Collections.singletonList(golCons[i]), 0, new Scalar(255), -1);
-        
-        //Windows.showImg("circles", start.clone());
-        //Windows.showImg("gold", goldMask.clone());
-        
-        if (silCons.length > 1) for (int i = 0; i < silCons.length; i++) for (int j = i+1; j < silCons.length; j++) {
-            // note: the above line is basically saying "if I have more than one circle, for each unique pair of circles, do the following
-            
-            int radius = silRadi[i] > silRadi[j] ? silRadi[i] : silRadi[j]; // get the larger of the two radii
-            
-            // START SECTION: this section is all about cropping out a section corresponding to the line of thickness 2*radius you would get if you drew a line through the entire mat through both silver minerals
-            int y1 = (int) (( (silCens[j].y - silCens[i].y) / (silCens[j].x - silCens[i].x) ) * (-silCens[i].x) + silCens[i].y); // coordinates
-            int y2 = (int) (( (silCens[j].y - silCens[i].y) / (silCens[j].x - silCens[i].x) ) * (start.width()-silCens[i].x-1) + silCens[i].y);
-            
-            Mat crop = new Mat(start.rows(), start.cols(), CvType.CV_8UC1); // destination mat
-            crop.setTo(new Scalar(0));
-            
-            Imgproc.line(crop, new Point(0, y1), new Point(start.width()-1, y2), new Scalar(255), 2*radius); // crop line
-            
-            Core.subtract(goldMask, crop, crop); // cropping
-            Core.subtract(goldMask, crop, crop);
-            
-            Imgproc.morphologyEx(goldMask, goldMask, Imgproc.MORPH_OPEN, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(4, 4))); // clear out noise
-            Imgproc.morphologyEx(goldMask, goldMask, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(10, 10))); // close holes
-            // END SECTION
-            
-            if (Imgproc.moments(crop, true).get_m00() <= 0) continue; // if there is no gold in cropped mat, skip and go to next pair
-            
-            List<MatOfPoint> contours = new ArrayList<>(); // list for storing contours from cropped mat
-            Imgproc.findContours(crop, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE); // find contours in cropped mat
-            
-            Moments goldmn = null; Point goldmnp = null;
-            for (MatOfPoint m : contours) {
-                Moments mn = Imgproc.moments(m); // get moments of contour
-                Point mnp = new Point((int)(mn.get_m10() / mn.get_m00()), (int)(mn.get_m01() / mn.get_m00())); // get center of contour
-                
-                Point[] ps = { silCens[i], silCens[j], mnp }; // array of points with gold center and both silver centers
-                Arrays.sort(ps, new Comparator<Point>() { // sort them in x-coordinate order (lesser first)
-                    @Override
-                    public int compare (Point point, Point t1) {
-                        return (int)Math.round(t1.x - point.x);
-                    }
-                });
-                
-                if (Math.abs( // check the difference in the distance between the left-most and center and center and right-most
-                              Math.sqrt(Math.pow(ps[2].x - ps[1].x, 2) + Math.pow(ps[2].y - ps[1].y, 2)) -
-                                      Math.sqrt(Math.pow(ps[1].x - ps[0].x, 2) + Math.pow(ps[1].y - ps[0].y, 2))
-                ) > spacingThres) continue;
-                
-                if (goldmn == null || mn.get_m00() > goldmn.get_m00()) { // get contour in cropped mat with largest area
-                    goldmn = mn;
-                    goldmnp = mnp;
-                }
-            }
-            
-            if (goldmn == null) continue;
-            
-            return SampleArrangement.fromInts((int)goldmnp.x, (int)silCens[i].x, (int)silCens[j].x);
-            
+    
+        for (int i = 0; i < golCons.size(); i++) {
+            Mat cons = new Mat(start.rows(), start.cols(), CvType.CV_8UC1); // destination mat
+            cons.setTo(new Scalar(0));
+            Imgproc.drawContours(cons, golCons, i, new Scalar(255), -1);
+            //Windows.showImg("con gol" + i, cons.clone());
+            //System.out.println(i + ": " + Imgproc.moments(cons, true).get_m00());
+            if (Imgproc.moments(cons, true).get_m00() < 1000) {
+                Log.d("SAMPLING", "removed gol: " + Imgproc.moments(cons, true).get_m00());
+                golCons.remove(i);
+                i--;
+            } //else Windows.showImg("con gol" + i, cons.clone());
         }
+    
+        Log.d("SAMPLING", "sil: " + silCons.size());
+        Log.d("SAMPLING", "gol: " + golCons.size());
+    
+        if (silCons.isEmpty() || (silCons.size() == 1 && golCons.isEmpty())) return SampleArrangement.ERROR;
+    
+        if (silCons.size() == 2) return SampleArrangement.LEFT;
+        if (silCons.size() > 1 || golCons.size() > 1) return SampleArrangement.ERROR;
+    
+        Moments silverm = Imgproc.moments(silCons.get(0)); // get moments of contour
+        Point silverp = new Point((int)(silverm.get_m10() / silverm.get_m00()), (int)(silverm.get_m01() / silverm.get_m00())); // get center of contour
+    
+        Moments goldm = Imgproc.moments(golCons.get(0)); // get moments of contour
+        Point goldp = new Point((int)(goldm.get_m10() / goldm.get_m00()), (int)(goldm.get_m01() / goldm.get_m00())); // get center of contour
+    
+        Log.d("SAMPLING", "silverp = " + silverp);
+        Log.d("SAMPLING", "goldp = " + goldp);
+        
+        if (silverp.x > goldp.x) return SampleArrangement.MIDDLE;
+        if (silverp.x < goldp.x) return SampleArrangement.RIGHT;
+        
+//        Mat silverMask = new Mat(), goldMask = new Mat();
+//
+//        Imgproc.cvtColor(start, start, Imgproc.COLOR_RGB2BGR);
+//
+//        double spacingThres = 50;
+//
+//        Core.inRange(start, SampleArrangement.silverLow, SampleArrangement.silverHigh, silverMask); // mask for silver mineral
+//        Core.inRange(start, SampleArrangement.goldLow, SampleArrangement.goldHigh, goldMask); // mask for gold mineral
+//
+//        Imgproc.morphologyEx(silverMask, silverMask, Imgproc.MORPH_OPEN, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(5, 5))); // clear out noise of silver mask
+//        Imgproc.morphologyEx(silverMask, silverMask, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(10, 10))); // close holes in silver mask
+//        Imgproc.morphologyEx(goldMask, goldMask, Imgproc.MORPH_OPEN, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(4, 4))); // clear out noise of gold mask
+//        Imgproc.morphologyEx(goldMask, goldMask, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(10, 10))); // close holes in gold mask
+//
+//        //Windows.showImg("start", start.clone());
+//        //Windows.showImg("silver mask", silverMask.clone());
+//        //Windows.showImg("gold mask", goldMask.clone());
+//
+//        MatOfPoint[] silCons = SampleArrangement.circularContours(silverMask, .6, 1).toArray(new MatOfPoint[0]); // get all the roughly circular contours in silver mask
+//        MatOfPoint[] golCons = SampleArrangement.rectangularContours(goldMask, .5, 1).toArray(new MatOfPoint[0]); // get all the roughly rectangular contours in gold mask
+//
+//        Point[] silCens = new Point[silCons.length]; // array for storing the silver contour centers
+//        int[]   silRadi = new int[silCons.length]; // array for storing the silver contour radii
+//        goldMask.setTo(new Scalar(0)); // clear gold mask so we can redraw only the rectangular contours
+//
+//        for (int i = 0; i < silCons.length; i++) { // get all the centers and radii of the circular contours in silver mask
+//            Point center = new Point();
+//            float[] radius = new float[1];
+//
+//            Imgproc.minEnclosingCircle(new MatOfPoint2f(silCons[i].toArray()), center, radius);
+//
+//            silCens[i] = center;
+//            silRadi[i] = (int)Math.ceil(radius[0]);
+//
+//            Imgproc.circle(start, silCens[i], silRadi[i], new Scalar(0,0,255), -1);
+//        }
+//
+//        for (int i = 0; i < golCons.length; i++) // redraw all the rectangular contours in gold mask
+//            Imgproc.drawContours(goldMask, Collections.singletonList(golCons[i]), 0, new Scalar(255), -1);
+//
+//        //Windows.showImg("circles", start.clone());
+//        //Windows.showImg("gold", goldMask.clone());
+//
+//        if (silCons.length > 1) for (int i = 0; i < silCons.length; i++) for (int j = i+1; j < silCons.length; j++) {
+//            // note: the above line is basically saying "if I have more than one circle, for each unique pair of circles, do the following
+//
+//            int radius = silRadi[i] > silRadi[j] ? silRadi[i] : silRadi[j]; // get the larger of the two radii
+//
+//            // START SECTION: this section is all about cropping out a section corresponding to the line of thickness 2*radius you would get if you drew a line through the entire mat through both silver minerals
+//            int y1 = (int) (( (silCens[j].y - silCens[i].y) / (silCens[j].x - silCens[i].x) ) * (-silCens[i].x) + silCens[i].y); // coordinates
+//            int y2 = (int) (( (silCens[j].y - silCens[i].y) / (silCens[j].x - silCens[i].x) ) * (start.width()-silCens[i].x-1) + silCens[i].y);
+//
+//            Mat crop = new Mat(start.rows(), start.cols(), CvType.CV_8UC1); // destination mat
+//            crop.setTo(new Scalar(0));
+//
+//            Imgproc.line(crop, new Point(0, y1), new Point(start.width()-1, y2), new Scalar(255), 2*radius); // crop line
+//
+//            Core.subtract(goldMask, crop, crop); // cropping
+//            Core.subtract(goldMask, crop, crop);
+//
+//            Imgproc.morphologyEx(goldMask, goldMask, Imgproc.MORPH_OPEN, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(4, 4))); // clear out noise
+//            Imgproc.morphologyEx(goldMask, goldMask, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.CV_SHAPE_RECT, new Size(10, 10))); // close holes
+//            // END SECTION
+//
+//            if (Imgproc.moments(crop, true).get_m00() <= 0) continue; // if there is no gold in cropped mat, skip and go to next pair
+//
+//            List<MatOfPoint> contours = new ArrayList<>(); // list for storing contours from cropped mat
+//            Imgproc.findContours(crop, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE); // find contours in cropped mat
+//
+//            Moments goldmn = null; Point goldmnp = null;
+//            for (MatOfPoint m : contours) {
+//                Moments mn = Imgproc.moments(m); // get moments of contour
+//                Point mnp = new Point((int)(mn.get_m10() / mn.get_m00()), (int)(mn.get_m01() / mn.get_m00())); // get center of contour
+//
+//                Point[] ps = { silCens[i], silCens[j], mnp }; // array of points with gold center and both silver centers
+//                Arrays.sort(ps, new Comparator<Point>() { // sort them in x-coordinate order (lesser first)
+//                    @Override
+//                    public int compare (Point point, Point t1) {
+//                        return (int)Math.round(t1.x - point.x);
+//                    }
+//                });
+//
+//                if (Math.abs( // check the difference in the distance between the left-most and center and center and right-most
+//                              Math.sqrt(Math.pow(ps[2].x - ps[1].x, 2) + Math.pow(ps[2].y - ps[1].y, 2)) -
+//                                      Math.sqrt(Math.pow(ps[1].x - ps[0].x, 2) + Math.pow(ps[1].y - ps[0].y, 2))
+//                ) > spacingThres) continue;
+//
+//                if (goldmn == null || mn.get_m00() > goldmn.get_m00()) { // get contour in cropped mat with largest area
+//                    goldmn = mn;
+//                    goldmnp = mnp;
+//                }
+//            }
+//
+//            if (goldmn == null) continue;
+//
+//            return SampleArrangement.fromInts((int)goldmnp.x, (int)silCens[i].x, (int)silCens[j].x);
+//
+//        }
         
         return SampleArrangement.ERROR;
         

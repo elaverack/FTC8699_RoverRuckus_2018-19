@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.new_frontier.autonomous.test;
 
 import android.graphics.PointF;
+import android.os.Environment;
 import android.util.Log;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsTouchSensor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -17,9 +19,19 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.teamcode.Enums;
+import org.firstinspires.ftc.teamcode.new_frontier.control.Arm;
 import org.firstinspires.ftc.teamcode.visuals.Graph;
 import org.opencv.core.Scalar;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,12 +43,13 @@ import java.util.List;
 public class AccelTest extends LinearOpMode {
     
     private DcMotor rf, rb, lf, lb;
+    private Arm arm;
     private BNO055IMU imu;
     //final private int secToMax = 1, secToMin = 1;
     private static final double minPower = .1, percentPerSecond = .7, STRAFE_INCHES_PER_REV   = 8.75;
     private static double
-    TURN_KP                 = .01,
-    TURN_KI                 = .002,
+    TURN_KP                 = .06,
+    TURN_KI                 = .012,
     TURN_KD                 = 0;
     private static final int ENCODER_PER_REV = 560, slow_down_start = 800;
     private double maxPower = .6;
@@ -49,6 +62,10 @@ public class AccelTest extends LinearOpMode {
             xd = false,
             yd = false;
     private int sel = 1;
+    
+    private static final String
+            HOMING_SAVE_DIR = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString(),
+            HOMING_FILE_N   = "homing.txt";
     
     private static DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
     
@@ -90,7 +107,65 @@ public class AccelTest extends LinearOpMode {
         imu = hardwareMap.get(BNO055IMU.class, "imul");
         imu.initialize(parameters);
     
-        while (!imu.isGyroCalibrated()) {
+        final File f = new File(HOMING_SAVE_DIR, HOMING_FILE_N);
+        
+        if (!f.exists()) {
+            telemetry.addData("Status", "Homing arm...");
+            telemetry.update();
+            arm = new Arm(
+                    hardwareMap.dcMotor.get("shoulder"),
+                    hardwareMap.dcMotor.get("elbow"),
+                    (ModernRoboticsTouchSensor) hardwareMap.touchSensor.get("slim"),
+                    (ModernRoboticsTouchSensor) hardwareMap.touchSensor.get("elim"),
+                    this);
+        
+            int[] home = arm.init();
+            if (f.exists() && !f.delete()) throw new Error("Unable to delete file.");
+            try {
+                if (!f.createNewFile()) throw new Error("Welp, couldn't make file.");
+            } catch (IOException e) { throw new Error("Welp, couldn't make file -- IOException."); }
+            try {
+                FileOutputStream out = new FileOutputStream(f);
+                PrintWriter      pw  = new PrintWriter(out);
+                //Enumeration      e  = save.elements();
+            
+                for (int i : home) pw.println(i);
+                pw.flush();
+                pw.close();
+                out.close();
+            } catch (FileNotFoundException e) {
+                throw new Error("Welp, couldn't make file -- FileNotFoundException.");
+            } catch (IOException e) {
+                throw new Error("Welp, couldn't make file -- IOException.");
+            }
+        } else {
+            int[] home = new int[2];
+            try {
+                FileInputStream in     = new FileInputStream(f);
+                BufferedReader  reader = new BufferedReader(new InputStreamReader(in));
+            
+                String line = reader.readLine();
+                for (int i = 0; i < home.length && line != null; i++) {
+                    home[i] = Integer.parseInt(line);
+                    line = reader.readLine();
+                }
+            
+            } catch (FileNotFoundException er) {
+                throw new Error("Welp, couldn't read file -- FileNotFoundException.");
+            } catch (IOException er) {
+                throw new Error("Welp, couldn't read file -- IOException.");
+            }
+            arm = new Arm(
+                    hardwareMap.dcMotor.get("shoulder"),
+                    home[0],
+                    hardwareMap.dcMotor.get("elbow"),
+                    home[1],
+                    (ModernRoboticsTouchSensor) hardwareMap.touchSensor.get("slim"),
+                    (ModernRoboticsTouchSensor) hardwareMap.touchSensor.get("elim"),
+                    this);
+        }
+    
+        while (!imu.isGyroCalibrated() && !isStopRequested()) {
             telemetry.addData("Status", "Calibrating gyro...");
             telemetry.update();
         }
@@ -99,6 +174,11 @@ public class AccelTest extends LinearOpMode {
         telemetry.update();
         waitForStart();
     
+        arm.rest();
+        
+        sleep(1000);
+    
+        double start = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).secondAngle;
         
         // COUNTERCLOCKWISE IS POSITIVE
 //
@@ -109,12 +189,12 @@ public class AccelTest extends LinearOpMode {
 //        //straightInches(-36, .5);
 //        //straightInches(24, .5);
 //        //straightInches(12, .5);
-//        strafeInches(24, .5, true);
+        strafeInches(24, .5, true);
 //
         
         //turnDegrees(90, .5, true);
         
-        //double end = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).secondAngle;
+        double end = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).secondAngle;
         
         
         double error = 0;
@@ -122,93 +202,93 @@ public class AccelTest extends LinearOpMode {
         
         while (opModeIsActive()) {
     
-            double start = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).secondAngle;
+        
             
-            while (!gamepad1.a && opModeIsActive()) {
-                
-                if (!upd && gamepad1.dpad_up) {
-                    switch (sel) {
-                        case 1:
-                            TURN_KP += increment;
-                            break;
-                        case 2:
-                            TURN_KI += increment;
-                            break;
-                        case 3:
-                            TURN_KD += increment;
-                            break;
-                    }
-                    upd = true;
-                } else if (upd && !gamepad1.dpad_up) upd = false;
-                
-                if (!downd && gamepad1.dpad_down) {
-                    switch (sel) {
-                        case 1:
-                            TURN_KP -= increment;
-                            break;
-                        case 2:
-                            TURN_KI -= increment;
-                            break;
-                        case 3:
-                            TURN_KD -= increment;
-                            break;
-                    }
-                    downd = true;
-                } else if (downd && !gamepad1.dpad_down) downd = false;
-                
-                if (!rbd && gamepad1.right_bumper) {
-                    sel++;
-                    if (sel == 4) sel = 1;
-                    rbd = true;
-                } else if (rbd && !gamepad1.right_bumper) rbd = false;
-                
-                if (!lbd && gamepad1.left_bumper) {
-                    sel--;
-                    if (sel == 0) sel = 3;
-                    lbd = true;
-                } else if (lbd && !gamepad1.left_bumper) lbd = false;
-                
-                if (!yd && gamepad1.y) {
-                    increment *= 10;
-                    yd = true;
-                } else if (yd && !gamepad1.y) yd = false;
-                
-                if (!xd && gamepad1.x) {
-                    increment *= .1;
-                    xd = true;
-                } else if (xd && !gamepad1.x) xd = false;
-                
-                switch (sel) {
-                    case 1:
-                        telemetry.addData("KP sel", TURN_KP);
-                        telemetry.addData("KI not", TURN_KI);
-                        telemetry.addData("KD not", TURN_KD);
-                        break;
-                    case 2:
-                        telemetry.addData("KP not", TURN_KP);
-                        telemetry.addData("KI sel", TURN_KI);
-                        telemetry.addData("KD not", TURN_KD);
-                        break;
-                    case 3:
-                        telemetry.addData("KP not", TURN_KP);
-                        telemetry.addData("KI not", TURN_KI);
-                        telemetry.addData("KD sel", TURN_KD);
-                        break;
-                }
-                telemetry.addData("Increment", increment);
-                telemetry.addData("Last error", error);
-                telemetry.update();
-            }
-            turnDegrees(90, .5, true);
-            error = deltaTheta(start, imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).secondAngle);
+//            while (!gamepad1.a && opModeIsActive()) {
+//
+//                if (!upd && gamepad1.dpad_up) {
+//                    switch (sel) {
+//                        case 1:
+//                            TURN_KP += increment;
+//                            break;
+//                        case 2:
+//                            TURN_KI += increment;
+//                            break;
+//                        case 3:
+//                            TURN_KD += increment;
+//                            break;
+//                    }
+//                    upd = true;
+//                } else if (upd && !gamepad1.dpad_up) upd = false;
+//
+//                if (!downd && gamepad1.dpad_down) {
+//                    switch (sel) {
+//                        case 1:
+//                            TURN_KP -= increment;
+//                            break;
+//                        case 2:
+//                            TURN_KI -= increment;
+//                            break;
+//                        case 3:
+//                            TURN_KD -= increment;
+//                            break;
+//                    }
+//                    downd = true;
+//                } else if (downd && !gamepad1.dpad_down) downd = false;
+//
+//                if (!rbd && gamepad1.right_bumper) {
+//                    sel++;
+//                    if (sel == 4) sel = 1;
+//                    rbd = true;
+//                } else if (rbd && !gamepad1.right_bumper) rbd = false;
+//
+//                if (!lbd && gamepad1.left_bumper) {
+//                    sel--;
+//                    if (sel == 0) sel = 3;
+//                    lbd = true;
+//                } else if (lbd && !gamepad1.left_bumper) lbd = false;
+//
+//                if (!yd && gamepad1.y) {
+//                    increment *= 10;
+//                    yd = true;
+//                } else if (yd && !gamepad1.y) yd = false;
+//
+//                if (!xd && gamepad1.x) {
+//                    increment *= .1;
+//                    xd = true;
+//                } else if (xd && !gamepad1.x) xd = false;
+//
+//                switch (sel) {
+//                    case 1:
+//                        telemetry.addData("KP sel", TURN_KP);
+//                        telemetry.addData("KI not", TURN_KI);
+//                        telemetry.addData("KD not", TURN_KD);
+//                        break;
+//                    case 2:
+//                        telemetry.addData("KP not", TURN_KP);
+//                        telemetry.addData("KI sel", TURN_KI);
+//                        telemetry.addData("KD not", TURN_KD);
+//                        break;
+//                    case 3:
+//                        telemetry.addData("KP not", TURN_KP);
+//                        telemetry.addData("KI not", TURN_KI);
+//                        telemetry.addData("KD sel", TURN_KD);
+//                        break;
+//                }
+//                telemetry.addData("Increment", increment);
+//                telemetry.addData("Last error", error);
+//                telemetry.update();
+//            }
+//            turnDegrees(90, .5, true);
+//            error = deltaTheta(start, imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).secondAngle);
             
             //drive();
     
-            //telemetry.addData("error", end - start);
+            telemetry.addData("error", end - start);
 //            telemetry.addData("Start: ", start);
 //            telemetry.addData("Delta: ", deltaTheta(start, imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).secondAngle));
-//            telemetry.addData("Status", "Done.");
-            //telemetry.update();
+            telemetry.addData("Status", "Done.");
+            telemetry.update();
             
         }
     }
@@ -476,7 +556,8 @@ public class AccelTest extends LinearOpMode {
 //                    p = (TURN_KP * e + TURN_KI * (pi + sume) + TURN_KD * ((e - laste)/dt)) / 100,
 //                    accelPow = maxPower;
         
-            double p = TURN_KP * e + TURN_KD * ((e - laste)/dt);
+            
+            double pi = e * dt, p = TURN_KP * e + TURN_KI * (sume + pi) + TURN_KD * ((e - laste)/dt);
             
             laste = e;
             
@@ -489,12 +570,19 @@ public class AccelTest extends LinearOpMode {
 //            }
     
             //debug("dt: " + DECIMAL_FORMAT.format(dt) + "; error: " + DECIMAL_FORMAT.format(e) + "; p: " + DECIMAL_FORMAT.format(p)); //+ "; sum: " + DECIMAL_FORMAT.format(sume));
-            debug("dt: " + dt + "; error: " + e + "; p: " + p); //+ "; sum: " + DECIMAL_FORMAT.format(sume));
+            debug("dt: " + dt + "; error: " + e + "; p: " + p + "; sum: " + DECIMAL_FORMAT.format(sume));
             
             //if (Math.abs(p) > maxPower) p = maxPower * dir;
             //p = Range.clip(p, -maxPower, maxPower);
-            if (p > maxPower) p = maxPower;
-            else if (p < -maxPower) p = -maxPower;
+            if (p > maxPower) {
+                p = maxPower;
+                if (e * p < 0) sume += pi;
+            }
+            else if (p < -maxPower) {
+                p = -maxPower;
+                if (e * p < 0) sume += pi;
+            }
+            else sume += pi;
         
             rf.setPower(p);
             lb.setPower(-p);
